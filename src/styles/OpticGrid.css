@@ -1,0 +1,75 @@
+/* Optic Grid - Two Column Split */
+.optic-grid {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  width: 100%;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 16px;
+  overflow-y: auto;
+  max-width: 100%;
+}
+
+.optic-grid-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.optic-column-header {
+  color: #aaa;
+  font-size: 10px;
+  font-family: monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* R-Slot Board Section */
+.optic-board-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.optic-board-label {
+  color: #888;
+  font-size: 9px;
+  font-family: monospace;
+  letter-spacing: 0.5px;
+  align-self: flex-start;
+  padding-left: 4px;
+}
+
+/* R-Slot Board - Green Outline (The Switch) - SCALED DOWN */
+.optic-board {
+  display: grid;
+  grid-template-columns: repeat(8, 45px);  /* Reduced from 60px */
+  grid-template-rows: repeat(2, 34px);     /* Reduced from 44px */
+  gap: 6px;                                 /* Reduced from 8px */
+  background: #4CAF50;
+  padding: 14px;                            /* Reduced from 20px */
+  border-radius: 8px;                       /* Reduced from 10px */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive - Stack columns on smaller screens */
+@media (max-width: 1600px) {
+  .optic-board {
+    grid-template-columns: repeat(8, 40px);  /* Even smaller */
+    grid-template-rows: repeat(2, 30px);
+    gap: 5px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 1400px) {
+  .optic-grid {
+    flex-direction: column;
+  }
+}

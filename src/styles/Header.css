@@ -1,0 +1,144 @@
+/* App Header - Compact for 14-inch */
+.app-header {
+  background: linear-gradient(135deg, #232f3e 0%, #37475a 100%);
+  border-bottom: 2px solid #ff9900;
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  height: 60px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+  min-width: 0;
+}
+
+.app-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.title-icon {
+  font-size: 20px;
+}
+
+.app-title h1 {
+  color: #ff9900;
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0;
+  letter-spacing: 1px;
+}
+
+.title-subtitle {
+  color: #888;
+  font-size: 11px;
+  font-weight: normal;
+  margin-left: 8px;
+}
+
+/* Breadcrumb Navigation - Compact */
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #888;
+  font-size: 11px;
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.breadcrumb-home {
+  font-size: 14px;
+}
+
+.breadcrumb-separator {
+  color: #666;
+  margin: 0 4px;
+}
+
+.breadcrumb-item {
+  color: #888;
+  transition: color 0.3s;
+}
+
+.breadcrumb-item.active {
+  color: #ff9900;
+  font-weight: bold;
+}
+
+/* Header Right Side - Compact */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-form {
+  display: flex;
+  gap: 6px;
+}
+
+.search-input {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 11px;
+  padding: 6px 10px;
+  width: 180px;
+  font-family: monospace;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #ff9900;
+}
+
+.search-button {
+  background: #ff9900;
+  border: none;
+  border-radius: 4px;
+  color: #232f3e;
+  font-size: 11px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.search-button:hover {
+  background: #ec7211;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-greeting {
+  color: #e0e0e0;
+  font-size: 11px;
+}
+
+.user-avatar {
+  background: #ff9900;
+  color: #232f3e;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 12px;
+}

@@ -1,0 +1,48 @@
+/* Optic Board Panel */
+.optic-board-panel {
+  background: #1c1c1c;
+  border: 2px solid #333;
+  border-radius: 12px;
+  padding: 16px 20px;                      /* Reduced padding */
+  overflow-y: auto;
+  overflow-x: hidden;                      /* Prevent horizontal scroll */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  max-width: 100%;                         /* Ensure containment */
+}
+
+.optic-board-panel .panel-header {
+  color: #e0e0e0;
+  font-size: 12px;                         /* Reduced from 13px */
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #ff9900;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: Arial, sans-serif;
+}
+
+.device-type-badge {
+  background: #ff9900;
+  color: #232f3e;
+  padding: 3px 8px;                        /* Reduced from 4px 10px */
+  border-radius: 5px;
+  font-size: 10px;                         /* Reduced from 11px */
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Main Panel Specific */
+.main-panel {
+  flex: 1;
+  min-height: 0;
+}

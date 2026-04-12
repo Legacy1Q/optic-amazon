@@ -1,0 +1,24 @@
+/* App Container */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: #232f3e;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+/* Header takes fixed height */
+.app-header {
+  flex-shrink: 0;
+  height: 60px;
+  min-height: 60px;
+}
+
+/* Navigation Container takes remaining space */
+.navigation-container {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}

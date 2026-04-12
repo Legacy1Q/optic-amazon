@@ -1,0 +1,119 @@
+
+/* Base Nav Item Styles (Shared) */
+.nav-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+  padding-right: 4px;
+}
+
+/* Custom Scrollbar */
+.nav-items::-webkit-scrollbar {
+  width: 8px;
+}
+
+.nav-items::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.nav-items::-webkit-scrollbar-thumb {
+  background: #ff9900;
+  border-radius: 4px;
+}
+
+.nav-items::-webkit-scrollbar-thumb:hover {
+  background: #ec7211;
+}
+
+/* Generic Nav Item */
+.nav-item {
+  position: relative;
+  font-family: 'Amazon Ember', Arial, sans-serif;
+  user-select: none;
+}
+
+.nav-item-label {
+  display: block;
+}
+
+.nav-item-badge {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 10px;
+}
+
+/* Disabled Panel Placeholder */
+.panel-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #666;
+  gap: 12px;
+  text-align: center;
+}
+
+.placeholder-icon {
+  font-size: 48px;
+  opacity: 0.3;
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #aaa;
+  gap: 12px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #333;
+  border-top-color: #ff9900;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error State */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  color: #f44336;
+  gap: 8px;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 32px;
+}
+
+/* Empty State */
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  color: #666;
+  gap: 8px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 32px;
+  opacity: 0.5;
+}
+
