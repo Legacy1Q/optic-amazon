@@ -8,14 +8,15 @@ export interface AvailabilityZone {
 }
 
 export interface Site {
+  cluster: Cluster;    // Parent cluster: 'IAD'
   id: string;
   name: string;        // e.g., '109', '222', '314'
   azId: string;
-  azName: string;      // Parent AZ: '[MAC_ADDRESS]'
-  brickCount?: number;
+  azName: string;      // Parent AZ: '[MAC_ADDRESS]', 'IAD12', etc.
 }
 
 export interface Brick {
+  cluster: Cluster;    // Parent cluster: 'IAD'
   id: string;
   name: string;        // e.g., 'B24', 'B29'
   siteId: string;
@@ -32,7 +33,7 @@ export interface OpticSlot {
   rSlot: string;            // Row slot: 'r1', 'r2', ... 'r16'
   portNumber: number;       // Port number: 1-16
   serialNumber?: string;    // Optic serial number (if present)
-  status: 'deployed' | 'not-deployed' | 'unknown' | 'no-optic';
+  status: 'deployed' | 'not-deployed' | 'unknown' | 'missing-optic';
   assetState?: string;      // Deployment state from Mobility API
   lastPolled?: Date;        // Last time NSM was polled
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Cluster, Site } from '../types';
 import NavItem from './NavItem';
 import { fetchSitesForAZ } from '../services/api';
-import '../styles/SitePanel.css';
+import '../styles/SitesPanel.css';
 
 interface Props {
   cluster: Cluster | null;
