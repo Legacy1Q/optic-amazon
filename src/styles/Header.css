@@ -44,6 +44,22 @@
   margin-left: 8px;
 }
 
+.title-icon img {
+  height: 24px;  /* Adjust this value to your preferred size */
+  width: auto;   /* Maintains aspect ratio */
+  display: block;
+  transition: all 0.3s ease;
+}
+
+.title-icon:hover img {
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 8px #ff9900);
+}
+
+.title-icon:active img {
+  transform: scale(0.95);
+}
+
 /* Breadcrumb Navigation - Compact */
 .breadcrumb-nav {
   display: flex;
@@ -81,6 +97,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1.4;
+  justify-content: center;
 }
 
 .search-form {
@@ -123,6 +141,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto; /* Pushes user info to the far right */
 }
 
 .user-greeting {
@@ -142,3 +161,19 @@
   font-weight: bold;
   font-size: 12px;
 }
+
+.title-icon {
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.title-icon:hover {
+  transform: scale(1.2) rotate(15deg);
+  filter: drop-shadow(0 0 8px #ff9900);
+}
+
+.title-icon:active {
+  transform: scale(0.95);
+}
+

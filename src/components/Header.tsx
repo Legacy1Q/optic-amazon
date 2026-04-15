@@ -1,103 +1,86 @@
 import React, { useState } from 'react';
-import { NavigationState } from '../types';
 import '../styles/Header.css';
 
 interface Props {
-  navState: NavigationState;
   userName: string;
+  onSearch: (deviceName: string) => void;
+  onReset?: () => void;
 }
 
-const Header: React.FC<Props> = ({ navState, userName }) => {
+const Header: React.FC<Props> = ({ userName, onSearch, onReset }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchError, setSearchError] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      // TODO: Implement search functionality
-      console.log('Searching for:', searchQuery);
+    
+    const deviceName = searchQuery.trim();
+    
+    if (!deviceName) {
+      setSearchError('Please enter a device name');
+      return;
     }
+
+    // Validate brick name format: cluster-site-fabric-roleId-brick
+    // Example: [MAC_ADDRESS]
+    const brickPattern = /^([a-z]+\d+)-(\d+)-([a-z]+)-([a-z0-9]+)-([a-z0-9]+)$/i;
+    
+    if (!brickPattern.test(deviceName)) {
+      setSearchError('Invalid format. Use: cluster-site-fabric-role-brick (e.g., [MAC_ADDRESS])');
+      return;
+    }
+
+    // Clear error and trigger search
+    setSearchError('');
+    onSearch(deviceName);
   };
 
-  const getBreadcrumbs = () => {
-    const crumbs: { label: string; active: boolean }[] = [];
-
-    // Cluster (IAD, CMH, PDX)
-    if (navState.selectedCluster) {
-      crumbs.push({
-        label: navState.selectedCluster,
-        active: !navState.selectedAZ,
-      });
+  const handleReset = () => {
+    setSearchQuery('');
+    setSearchError('');
+    if (onReset) {
+      onReset();
+    } else {
+      window.location.reload(); // Fallback to reload if no reset handler provided
     }
-
-    // Availability Zone (IAD7, CMH3, etc.)
-    if (navState.selectedAZ) {
-      crumbs.push({
-        label: navState.selectedAZ,
-        active: !navState.selectedSite,
-      });
-    }
-
-    // Site (222, 109, etc.)
-    if (navState.selectedSite) {
-      crumbs.push({
-        label: navState.selectedSite,
-        active: !navState.selectedBrick,
-      });
-    }
-
-    // Brick (B24, B29, etc.)
-    if (navState.selectedBrick) {
-      crumbs.push({
-        label: navState.selectedBrick,
-        active: true,
-      });
-    }
-
-    return crumbs;
   };
-
-  const breadcrumbs = getBreadcrumbs();
 
   return (
     <header className="app-header">
       <div className="header-left">
         <div className="app-title">
-          <span className="title-icon">⚡</span>
+          <span 
+          className="title-icon"
+          onClick={handleReset}
+          style={{cursor: 'pointer'}}
+          title='Reset / Refresh'
+          >
+            <img src="../images/aws_logo_1.png" alt="AWS Logo" />
+          </span>
           <h1>Brick Tracker</h1>
-          <span className="title-subtitle">Amazon Harmony</span>
         </div>
-
-        {breadcrumbs.length > 0 && (
-          <nav className="breadcrumb-nav">
-            <span className="breadcrumb-home">🏠</span>
-            {breadcrumbs.map((crumb, index) => (
-              <React.Fragment key={index}>
-                <span className="breadcrumb-separator">›</span>
-                <span
-                  className={`breadcrumb-item ${
-                    crumb.active ? 'active' : ''
-                  }`}
-                >
-                  {crumb.label}
-                </span>
-              </React.Fragment>
-            ))}
-          </nav>
-        )}
       </div>
 
       <div className="header-right">
         <form className="search-form" onSubmit={handleSearch}>
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search bricks..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <button type="submit" className="search-button">
-            🔍
-          </button>
+          <div className="search-wrapper">
+            <input
+              type="text"
+              className={`search-input ${searchError ? 'error' : ''}`}
+              placeholder="[BRICK_NAME]"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                if (searchError) setSearchError('');
+              }}
+            />
+            <button type="submit" className="search-button">
+              🔍
+            </button>
+          </div>
+          {searchError && (
+            <div className="search-error">{searchError}</div>
+          )}
         </form>
 
         <div className="user-info">
@@ -110,3 +93,4 @@ const Header: React.FC<Props> = ({ navState, userName }) => {
 };
 
 export default Header;
+

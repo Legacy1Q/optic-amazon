@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { OpticSlot as OpticSlotType } from '../types';
 import OpticSlot from './OpticSlot';
@@ -86,3 +87,4 @@ const OpticGrid: React.FC<Props> = ({ slots, deviceName }) => {
 };
 
 export default OpticGrid;
+

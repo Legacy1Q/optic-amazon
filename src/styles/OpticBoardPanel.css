@@ -1,48 +1,235 @@
-/* Optic Board Panel */
+/* Optic Board Panel - Matches Screenshot */
 .optic-board-panel {
-  background: #1c1c1c;
-  border: 2px solid #333;
-  border-radius: 12px;
-  padding: 16px 20px;                      /* Reduced padding */
-  overflow-y: auto;
-  overflow-x: hidden;                      /* Prevent horizontal scroll */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  transition: all 0.3s;
+  background: #1a1f2e;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  height: 100%;
-  max-width: 100%;                         /* Ensure containment */
+  overflow: hidden;
+  position: relative;
 }
 
-.optic-board-panel .panel-header {
-  color: #e0e0e0;
-  font-size: 12px;                         /* Reduced from 13px */
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 0;
-  padding-bottom: 6px;
+/* Panel Header with Orange Border */
+.optic-board-header {
+  background: #232936;
   border-bottom: 2px solid #ff9900;
+  padding: 12px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-family: Arial, sans-serif;
 }
 
-.device-type-badge {
-  background: #ff9900;
-  color: #232f3e;
-  padding: 3px 8px;                        /* Reduced from 4px 10px */
-  border-radius: 5px;
-  font-size: 10px;                         /* Reduced from 11px */
+.optic-board-title {
+  color: #ff9900;
+  font-size: 14px;
   font-weight: bold;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
-/* Main Panel Specific */
-.main-panel {
-  flex: 1;
-  min-height: 0;
+/* Empty/Loading States - Centered with Icon */
+.optic-board-empty,
+.optic-board-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-size: 14px;
+  gap: 16px;
 }
+
+.optic-board-empty::before {
+  content: "🧱";
+  font-size: 48px;
+  opacity: 0.5;
+}
+
+.optic-board-loading::before {
+  content: "⏳";
+  font-size: 48px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* Optic Grid Container - Two Column Layout */
+.optic-grid {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  width: 100%;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 16px;
+  overflow-y: auto;
+  max-width: 100%;
+}
+
+/* Grid Columns - Odd (Left) and Even (Right) */
+.optic-grid-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Column Headers */
+.optic-column-header {
+  color: #ff9900;
+  font-size: 11px;
+  font-family: monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+/* R-Slot Board Section */
+.optic-board-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+/* Board Label (e.g., [MAC_ADDRESS]1") */
+.optic-board-label {
+  color: #888;
+  font-size: 10px;
+  font-family: monospace;
+  letter-spacing: 0.5px;
+  align-self: flex-start;
+  padding-left: 4px;
+  margin-bottom: 2px;
+}
+
+/* R-Slot Board - Green Outline Container (The Switch) */
+.optic-board {
+  display: grid;
+  grid-template-columns: repeat(8, 45px);  /* 8 columns for ports */
+  grid-template-rows: repeat(2, 34px);     /* 2 rows: odd ports top, even ports bottom */
+  gap: 6px;
+  background: #4CAF50;  /* Green container like a network switch */
+  padding: 14px;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+/* Individual Optic Slot - Port Rectangle */
+.optic-slot {
+  width: 45px;
+  height: 34px;
+  border-radius: 4px;
+  border: 2px solid #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: monospace;
+  font-size: 9px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+/* Port Number Badge - Top Right Corner */
+.optic-slot::before {
+  content: attr(data-port);
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 8px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-weight: bold;
+}
+
+/* Optic Status Colors */
+.optic-slot.no-optic {
+  background: #2a2a2a;  /* Dark gray - empty slot */
+  border-color: #444;
+}
+
+.optic-slot.deployed {
+  background: #4CAF50;  /* Green - deployed */
+  border-color: #388E3C;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+}
+
+.optic-slot.not-deployed {
+  background: #FF5252;  /* Red - not deployed */
+  border-color: #D32F2F;
+  box-shadow: 0 0 8px rgba(255, 82, 82, 0.5);
+}
+
+.optic-slot.error {
+  background: #FFA726;  /* Orange - error */
+  border-color: #F57C00;
+}
+
+/* Hover Effects */
+.optic-slot:hover {
+  transform: scale(1.1);
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(255, 153, 0, 0.6);
+  border-color: #ff9900;
+}
+
+/* Serial Number Display - Inside Slot */
+.optic-serial {
+  color: #fff;
+  font-size: 7px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40px;
+}
+
+/* Scrollbar Styling for Grid */
+.optic-grid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.optic-grid::-webkit-scrollbar-track {
+  background: #1a1f2e;
+}
+
+.optic-grid::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+.optic-grid::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Responsive - Stack on smaller screens */
+@media (max-width: 1000px) {
+  .optic-grid {
+    flex-direction: column;
+  }
+
+  .optic-board {
+    grid-template-columns: repeat(8, 40px);
+    grid-template-rows: repeat(2, 30px);
+    gap: 5px;
+    padding: 12px;
+  }
+
+  .optic-slot {
+    width: 40px;
+    height: 30px;
+  }
+}
+

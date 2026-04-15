@@ -58,6 +58,7 @@
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
 }
 
+
 /* Responsive - Stack columns on smaller screens */
 @media (max-width: 1600px) {
   .optic-board {
@@ -68,8 +69,11 @@
   }
 }
 
-@media (max-width: 1400px) {
+/* Only stack vertically on very small screens */
+@media (max-width: 1000px) {
   .optic-grid {
     flex-direction: column;
   }
 }
+
+

@@ -1,75 +1,84 @@
-import React, { useEffect, useState } from 'react';
-import { Cluster, OpticSlot } from '../types';
-import OpticGrid from './OpticGrid';
+import { useState, useEffect } from 'react';
 import { fetchOpticData } from '../services/api';
+import OpticGrid from './OpticGrid';
+import { OpticSlot } from '../types';
 import '../styles/OpticBoardPanel.css';
 
 interface Props {
-  cluster: Cluster | null;
   azId: string | null;
   siteId: string | null;
   brickId: string | null;
 }
 
-const OpticBoardPanel: React.FC<Props> = ({ cluster, azId, siteId, brickId }) => {
-  const [opticSlots, setOpticSlots] = useState<OpticSlot[]>([]);
+const OpticBoardPanel: React.FC<Props> = ({ azId, siteId, brickId }) => {
+  const [slots, setSlots] = useState<OpticSlot[]>([]);
   const [loading, setLoading] = useState(false);
-  const [deviceName, setDeviceName] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+
+  // Construct device name from props
+  const deviceName = azId && siteId && brickId
+    ? `${azId}-${siteId}-es-e1-${brickId}`
+    : null;
 
   useEffect(() => {
-    if (!cluster || !azId || !siteId || !brickId) {
-      setOpticSlots([]);
+    if (!deviceName) {
+      setSlots([]);
       return;
     }
 
-    const loadOpticData = async () => {
+    const loadData = async () => {
       setLoading(true);
-      try {
-        // Build device name: {az_lower}-{site}-es-e1-{brick_lower}
-        // Example: [MAC_ADDRESS]
-        const name = `${azId.toLowerCase()}-${siteId}-es-e1-${brickId.toLowerCase()}`;
-        setDeviceName(name);
+      setError(null);
 
-        // Fetch optic data from NSM/Mobility APIs
-        const data = await fetchOpticData(name);
-        setOpticSlots(data);
-      } catch (error) {
-        console.error('Failed to load optic data:', error);
+      try {
+        console.log('Fetching optic data for:', deviceName);
+        const data = await fetchOpticData(deviceName);
+        console.log('Received optic data:', data);
+        setSlots(data);
+      } catch (err) {
+        console.error('Error loading optic data:', err);
+        setError('Failed to load optic data');
       } finally {
         setLoading(false);
       }
     };
 
-    loadOpticData();
-  }, [cluster, azId, siteId, brickId]);
+    loadData();
+  }, [deviceName]);
 
-  if (!brickId) {
+  if (!deviceName) {
     return (
-      <div className="nav-panel optic-board-panel main-panel disabled">
-        <div className="panel-header">Optic Board</div>
-        <div className="panel-placeholder">
-          <span className="placeholder-icon">🔌</span>
-          <span>Select a brick to view optics</span>
+      <div className="optic-board-panel">
+        <div className="optic-board-empty">
+          ⬆️ Enter a device name to view optic data above ⬆️
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="optic-board-panel">
+        <div className="optic-board-loading">
+          Loading optic data for {deviceName}...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="optic-board-panel">
+        <div className="optic-board-error">
+          {error}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="nav-panel optic-board-panel main-panel">
-      <div className="panel-header">
-        <span>{deviceName}</span>
-        <span className="device-type-badge brick">BRICK</span>
-      </div>
-
-      {loading ? (
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <span>Loading optic data...</span>
-        </div>
-      ) : (
-        <OpticGrid slots={opticSlots} deviceName={deviceName} />
-      )}
+    <div className="optic-board-panel">
+      <OpticGrid slots={slots} deviceName={deviceName} />
     </div>
   );
 };
