@@ -1,0 +1,450 @@
+// ==UserScript==
+// @name         optic-amazon Bridge
+// @namespace    id-install
+// @version      2.2
+// @description  Tampermonkey bridge — fetches NSM + UNS + Bin + SIM data for optic-amazon web app
+// @author       @misimsr
+// @match        https://optic-amazon.beta.harmony.a2z.com/*
+// @match        https://optic-amazon.beta.harmony.a2z.com/brick-tracking
+// @match        https://optic-amazon.beta.harmony.a2z.com/bin-tracking
+// @match        https://optic-amazon.beta.harmony.a2z.com/ticket-tracking
+// @grant        GM.xmlHttpRequest
+// @connect      aws-border.com
+// @connect      amazon.com
+// @connect      mobility-search.amazon.com
+// @connect      uns.networking.aws.dev
+// @connect      issues.amazon.com
+// ==/UserScript==
+
+(function () {
+  'use strict';
+
+  const NSM = {
+    iad : 'https://nsm-iad.amazon.com',
+    pdx : 'https://nsm-pdx.amazon.com',
+    cmh : 'https://nsm.cmh.aws-border.com',
+    fra : 'https://nsm.fra.aws-border.com',
+    lhr : 'https://nsm.lhr.aws-border.com',
+    arn : 'https://nsm.arn.aws-border.com',
+  };
+
+  const UNS_BASE        = 'https://uns.networking.aws.dev';
+  const SOLR_BASE       = 'https://mobility-search.amazon.com/solr/assets/select/';
+  const TICKET_KEYWORDS = ['OPTIC', 'REQUIRED', 'DR4'];   // moved up from bottom
+
+  // ── Announce on load in case React is already listening ──
+  window.postMessage({ type: 'BRIDGE_READY' }, window.location.origin);
+
+  // ── Single message listener ───────────────────────────────
+  window.addEventListener('message', async (event) => {
+    if (event.origin !== window.location.origin) return;
+    const msg = event.data;
+    if (!msg || !msg.type) return;
+
+    // ── Ping ──────────────────────────────────────────────
+    if (msg.type === 'BRIDGE_PING') {
+      window.postMessage({ type: 'BRIDGE_READY' }, window.location.origin);
+      return;
+    }
+
+    // ── NSM optic request ─────────────────────────────────
+    if (msg.type === 'NSM_REQUEST') {
+      const { requestId, payload } = msg;
+      const { deviceName } = payload;
+      try {
+        const results = await fetchBrickData(deviceName);
+        window.postMessage(
+          { type: 'NSM_RESPONSE', requestId, payload: results },
+          window.location.origin
+        );
+      } catch (err) {
+        window.postMessage(
+          { type: 'BRIDGE_ERROR', requestId, payload: String(err) },
+          window.location.origin
+        );
+      }
+      return;
+    }
+
+    // ── UNS handoff request ───────────────────────────────
+    if (msg.type === 'UNS_REQUEST') {
+      const { requestId, payload } = msg;
+      const { deviceName } = payload;
+      try {
+        const data = await fetchUNSHandoffData(deviceName);
+        window.postMessage(
+          { type: 'UNS_RESPONSE', requestId, payload: data },
+          window.location.origin
+        );
+      } catch (err) {
+        window.postMessage(
+          { type: 'BRIDGE_ERROR', requestId, payload: String(err) },
+          window.location.origin
+        );
+      }
+      return;
+    }
+
+      // ── SIM Ticket request ────────────────────────────────
+      if (msg.type === 'TICKET_REQUEST') {
+          const { requestId, payload } = msg;
+          const { groupName } = payload;
+          try {
+              const tickets = await fetchSIMTickets(groupName);
+              window.postMessage(
+                  { type: 'TICKET_RESPONSE', requestId, payload: tickets },
+                  window.location.origin
+              );
+          } catch (err) {
+              window.postMessage(
+                  { type: 'BRIDGE_ERROR', requestId, payload: String(err) },
+                  window.location.origin
+              );
+          }
+          return;
+      }
+
+
+    // ── BIN request (NEW) ─────────────────────────────────
+    if (msg.type === 'BIN_REQUEST') {
+      const { requestId, payload } = msg;
+      const { site, room, bin } = payload;
+      try {
+        const data = await fetchBinParts(site, room, bin);
+        window.postMessage(
+          { type: 'BIN_RESPONSE', requestId, payload: data },
+          window.location.origin
+        );
+      } catch (err) {
+        window.postMessage(
+          { type: 'BRIDGE_ERROR', requestId, payload: String(err) },
+          window.location.origin
+        );
+      }
+      return;
+    }
+  });
+
+  // ════════════════════════════════════════════════════════
+  //  BIN helpers (NEW)
+  // ════════════════════════════════════════════════════════
+
+  /**
+   * Fetches bin parts from Mobility Solr.
+   * First gets the total count, then fetches all docs for speed breakdown.
+   */
+  async function fetchBinParts(site, room, bin) {
+    const query = `site:${site} AND room:${room} AND bin:${bin}`;
+
+    // Step 1: Get total count
+    const countParams = new URLSearchParams({
+        q: query, wt: 'json', rows: '0',
+    });
+    const countResp = await fetchJSON(`${SOLR_BASE}?${countParams}`);
+    const numFound  = countResp?.response?.numFound ?? 0;
+
+    // Step 2: Fetch docs for speed classification (up to 50000)
+    const docsParams = new URLSearchParams({
+      q: query, wt: 'json', rows: '50000', fl: 'model_description',
+    });
+    const docsResp = await fetchJSON(`${SOLR_BASE}?${docsParams}`);
+    const docs     = docsResp?.response?.docs ?? [];
+
+    return {
+      response: {
+        numFound,
+        docs,
+      },
+    };
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  NSM helpers
+  // ════════════════════════════════════════════════════════
+
+  function getRegion(cluster) {
+    return cluster.match(/^[a-z]+/i)?.[0]?.toLowerCase();
+  }
+
+  function parseBrickName(deviceName) {
+    const match = deviceName.match(
+      /^([a-z]+\d+)-(\d+)-([a-z]+)-([a-z0-9]+)-([a-z0-9]+)$/i
+    );
+    if (!match) return null;
+    const [, cluster, site, fabric, roleId, brick] = match;
+    return { cluster, site, fabric, roleId, brick };
+  }
+
+  function fetchPage(url) {
+    return new Promise((resolve, reject) => {
+      GM.xmlHttpRequest({
+        method   : 'GET',
+        url,
+        timeout  : 10000,
+        onload   : (resp) => {
+          if (resp.status >= 200 && resp.status < 300) resolve(resp.responseText);
+          else reject(new Error(`HTTP ${resp.status}`));
+        },
+        onerror  : () => reject(new Error('Network error')),
+        ontimeout: () => reject(new Error('Timeout')),
+      });
+    });
+  }
+
+  function fetchJSON(url) {
+    return new Promise((resolve, reject) => {
+      GM.xmlHttpRequest({
+        method   : 'GET',
+        url,
+        timeout  : 12000,
+        headers  : { Accept: 'application/json' },
+        onload   : (resp) => {
+          if (resp.status >= 200 && resp.status < 300) {
+            try { resolve(JSON.parse(resp.responseText)); }
+            catch { reject(new Error('Invalid JSON')); }
+          } else {
+            reject(new Error(`HTTP ${resp.status}`));
+          }
+        },
+        onerror  : () => reject(new Error('Network error')),
+        ontimeout: () => reject(new Error('Timeout')),
+      });
+    });
+  }
+
+  function parsePortsFromHTML(html) {
+    const clean = html
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<img[^>]+>/gi, '');
+    const doc   = new DOMParser().parseFromString(clean, 'text/html');
+    const table = doc.getElementById('hardwareTable');
+    if (!table) return null;
+
+    const headers  = Array.from(table.rows[0].cells).map(c => c.textContent.trim());
+    const portIdx  = headers.findIndex(h => h === 'Port Name');
+    const serialIdx= headers.findIndex(h => h === 'Serial Number');
+    const pollIdx  = headers.findIndex(h => h === 'Polling Status');
+    if (portIdx < 0 || serialIdx < 0 || pollIdx < 0) return null;
+
+    const portMap = {};
+    const tbody   = table.querySelector('tbody');
+    for (const row of tbody.rows) {
+      const portName = row.cells[portIdx]?.textContent.trim();
+      const serial   = row.cells[serialIdx]?.textContent.trim();
+      const poll     = row.cells[pollIdx]?.textContent.trim().toLowerCase();
+      const jrpMatch = portName?.match(/^jrp(\d+)$/);
+      if (jrpMatch && poll === 'up' && serial) {
+        portMap[jrpMatch[1]] = serial;
+      }
+    }
+    return portMap;
+  }
+
+  async function fetchSlotPorts(host, region) {
+    const url     = `${NSM[region]}/device/${host}.ec2.${region}.network`;
+    const failAll = (status) =>
+      Array.from({ length: 16 }, (_, i) => ({
+        port: String(i + 1), status, serialNumber: null, mobilityState: null,
+      }));
+
+    try {
+      const html    = await fetchPage(url);
+      const portMap = parsePortsFromHTML(html);
+      if (!portMap) return failAll('no-table');
+
+      return Array.from({ length: 16 }, (_, i) => {
+        const portNum = String(i + 1);
+        const serial  = portMap[portNum];
+        return { port: portNum, status: serial ? 'seated' : 'missing', serialNumber: serial ?? null };
+      });
+    } catch (err) {
+      return failAll(err.message === 'Timeout' ? 'timeout' : 'error');
+    }
+  }
+
+  async function fetchMobilityState(serial) {
+    const params = new URLSearchParams({
+      q: `serial_id:${serial}`, wt: 'json', rows: '1', fl: 'state',
+    });
+    return new Promise((resolve) => {
+      GM.xmlHttpRequest({
+        method   : 'GET',
+        url      : `https://mobility-search.amazon.com/solr/assets/select/?${params}`,
+        timeout  : 8000,
+        onload   : (resp) => {
+          try {
+            const data = JSON.parse(resp.responseText);
+            resolve(data.response?.docs?.[0]?.state ?? null);
+          } catch { resolve(null); }
+        },
+        onerror  : () => resolve(null),
+        ontimeout: () => resolve(null),
+      });
+    });
+  }
+
+  async function fetchBrickData(deviceName) {
+    const info = parseBrickName(deviceName);
+    if (!info) throw new Error('Invalid device name format');
+
+    const region = getRegion(info.cluster);
+    if (!region || !NSM[region]) throw new Error(`Unknown region: ${info.cluster}`);
+
+    const slots = Array.from({ length: 16 }, (_, i) => `r${i + 1}`);
+
+    return Promise.all(
+      slots.map(async (rSlot) => {
+        const host  = `${info.cluster}-${info.site}-${info.fabric}-${info.roleId}-${info.brick}-t1-${rSlot}`;
+        const ports = await fetchSlotPorts(host, region);
+
+        const enriched = await Promise.all(
+          ports.map(async (p) => {
+            if (p.status === 'seated' && p.serialNumber) {
+              const state      = await fetchMobilityState(p.serialNumber);
+              const normalized = (state ?? '').toUpperCase();
+              return {
+                ...p,
+                mobilityState: state,
+                status: normalized === 'DEPLOYED' ? 'deployed' : 'not-deployed',
+              };
+            }
+            return p;
+          })
+        );
+
+        return { rSlot, host, ports: enriched };
+      })
+    );
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  UNS helpers
+  // ════════════════════════════════════════════════════════
+
+  function buildUNSUrl(deviceName) {
+    const shortname = encodeURIComponent(`[${deviceName.toLowerCase()}][onefabric_12_8t_16w_agg_brick]`);
+    return `${UNS_BASE}/api/workflows?workflow=AggBrickScalingWorkflow&operation=and&shortname=%3D${shortname}`;
+  }
+
+  async function fetchUNSHandoffData(deviceName) {
+    const apiUrl  = buildUNSUrl(deviceName);
+    const json    = await fetchJSON(apiUrl);
+
+    const workflows = Array.isArray(json) ? json : (json.workflows ?? []);
+
+    if (!workflows.length) {
+      return {
+        workflowStatus : 'NOT_FOUND',
+        projectedDate  : null,
+        timelineSteps  : [],
+        workflowSteps  : [],
+        workflowUrl    : buildUNSBrowserUrl(deviceName),
+      };
+    }
+
+    const wf = workflows[0];
+
+    const workflowStatus = wf.status ?? wf.workflowStatus ?? 'UNKNOWN';
+
+    const projectedDate =
+      wf.projectedDate   ??
+      wf.targetDate      ??
+      wf.metadata?.projectedDate ??
+      wf.metadata?.targetDate    ??
+      null;
+
+    const TIMELINE_NAMES = [
+      'Preparation',
+      'Physical Build',
+      'Provisioning',
+      'Physical Validation',
+      'Go Live',
+      'Clean Up',
+    ];
+
+    const rawTimeline = wf.timeline ?? wf.timelineSteps ?? wf.phases ?? [];
+    const timelineSteps = TIMELINE_NAMES.map((name) => {
+      const found = rawTimeline.find(
+        (s) => (s.name ?? s.phase ?? '').toLowerCase() === name.toLowerCase()
+      );
+      return {
+        name,
+        status : found?.status ?? 'PENDING',
+        pct    : typeof found?.percentage === 'number'
+                   ? found.percentage
+                   : typeof found?.progress === 'number'
+                     ? found.progress
+                     : 0,
+      };
+    });
+
+    const rawSteps    = wf.steps ?? wf.workflowSteps ?? [];
+    const workflowSteps = rawSteps.map((s) => ({
+      name  : s.name   ?? s.stepName ?? 'Unknown',
+      status: s.status ?? 'UNKNOWN',
+    }));
+
+    return {
+      workflowStatus,
+      projectedDate,
+      timelineSteps,
+      workflowSteps,
+      workflowUrl: buildUNSBrowserUrl(deviceName),
+    };
+  }
+
+  function buildUNSBrowserUrl(deviceName) {
+    const shortname = encodeURIComponent(`=[${deviceName.toLowerCase()}][onefabric_12_8t_16w_agg_brick]`);
+    return `${UNS_BASE}/#/workflows?workflow=AggBrickScalingWorkflow&operation=and&shortname=${shortname}`;
+  }
+
+    // ════════════════════════════════════════════════════════
+    //  SIM Ticket helpers
+    // ════════════════════════════════════════════════════════
+
+    const TICKET_KEYWORDS = ['OPTIC', 'REQUIRED', 'DR4'];
+
+    /**
+    * Fetches open tickets for a given SIM assigned group and filters
+    * by TICKET_KEYWORDS in the title.
+    *
+    * SIM search API endpoint (internal):
+    *   https://issues.amazon.com/api/issues/search
+    *
+    * We query by assignedGroup and filter client-side by keyword.
+    */
+    async function fetchSIMTickets(groupName) {
+        const params = new URLSearchParams({
+            assignedGroup : groupName,
+            status        : 'not_resolved',   // open tickets
+            maxResults    : '200',
+            fields        : 'id,title,status,assignee,assignedGroup,createdDate,updatedDate,severity',
+        });
+
+        const url  = `https://issues.amazon.com/api/issues/search?${params}`;
+        const json = await fetchJSON(url);
+
+        // SIM returns { issues: [...] } or an array
+        const issues = Array.isArray(json) ? json : (json.issues ?? json.results ?? []);
+
+        return issues
+            .filter(issue => {
+            const title = (issue.title ?? issue.summary ?? '').toUpperCase();
+            return TICKET_KEYWORDS.some(kw => title.includes(kw));
+        })
+            .map(issue => ({
+            id           : issue.id           ?? issue.issueId   ?? '',
+            title        : issue.title        ?? issue.summary   ?? '',
+            status       : issue.status       ?? 'Unknown',
+            assignee     : issue.assignee     ?? issue.owner     ?? '',
+            assignedGroup: issue.assignedGroup ?? groupName,
+            createdAt    : issue.createdDate  ?? issue.created   ?? '',
+            updatedAt    : issue.updatedDate  ?? issue.updated   ?? '',
+            severity     : issue.severity     ?? '',
+            url          : `https://t.corp.amazon.com/${issue.id ?? issue.issueId}`,
+            categories   : [],   // React side fills this in
+        }));
+    }
+
+
+})();
