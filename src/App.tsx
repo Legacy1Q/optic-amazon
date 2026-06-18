@@ -1,55 +1,68 @@
-import { useEffect, useState } from 'react';
+// src/App.tsx
+
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Nav from './components/Nav';
+import Footer from './components/Footer';
+import Home from './components/Home';
+import BrickTracking from './components/BrickTracking';
+import BinTracking from './components/BinTracking';
+import DeploymentTracking from './components/DeploymentTracking';
+import TicketTracking from './components/TicketTracking';
 import './styles/App.css';
-import { HarmonyPapiUser } from '@amzn/harmony-types';
-import Header from './components/Header';
-import OpticBoardPanel from './components/OpticBoardPanel';
 
-function App() {
-  const [user, setUser] = useState<HarmonyPapiUser>();
-  const [selectedBrick, setSelectedBrick] = useState<{
-    azId: string;
-    siteId: string;
-    brickId: string;
-  } | null>(null);
+// Protected route wrapper
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/" replace />;
+};
 
-  useEffect(() => {
-    const getUser = async () => {
-      const user = await window.harmony.user.lookup();
-      setUser(user);
-    };
-
-    getUser();
-  }, []);
-
-  const handleSearch = (deviceName: string) => {
-    // Parse device name: cluster-site-fabric-roleId-brick
-    // Example: [MAC_ADDRESS]
-    const parts = deviceName.split('-');
-
-    if (parts.length === 5) {
-      const [azId, siteId, , , brickId] = parts;
-      setSelectedBrick({ azId, siteId, brickId });
-    }
-  };
-
-  const handleReset = () => {
-    setSelectedBrick(null);
-  };
-
+const AppLayout = () => {
   return (
-    <div className="app">
-      <Header
-        userName={user?.firstName || 'User'}
-        onSearch={handleSearch}
-        onReset={handleReset}
-      />
-      <OpticBoardPanel
-        azId={selectedBrick?.azId || null}
-        siteId={selectedBrick?.siteId || null}
-        brickId={selectedBrick?.brickId || null}
-      />
+    <div className="app-shell">
+      <Nav />
+      <div className="app-content">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route
+            path="/brick-tracking"
+            element={
+              <ProtectedRoute>
+                <BrickTracking />
+              </ProtectedRoute>
+            }
+          />
+          {/* Future routes */}
+          <Route path="/bin-tracking"        
+            element=
+              {<ProtectedRoute>
+                <BinTracking />
+              </ProtectedRoute>} />
+          <Route path="/deployment-tracking" 
+            element=
+              {<ProtectedRoute>
+                  <DeploymentTracking />
+                </ProtectedRoute>} />
+          <Route path="/ticket-tracking"     
+            element=
+              {<ProtectedRoute>
+                <TicketTracking />
+              </ProtectedRoute>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+      <Footer />
     </div>
   );
-}
+};
+
+const App = () => (
+  <AuthProvider>
+    <BrowserRouter>
+      <AppLayout />
+    </BrowserRouter>
+  </AuthProvider>
+);
 
 export default App;

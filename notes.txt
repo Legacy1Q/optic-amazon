@@ -1,0 +1,6 @@
+how to deploy
+- npm i
+- npm run build
+- harmony app deploy 
+
+my api #1: "a8aw8m1vjl.execute-api.us-east-1.amazonaws.com"

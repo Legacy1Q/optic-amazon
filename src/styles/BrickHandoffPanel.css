@@ -1,0 +1,187 @@
+/* ── Overlay ─────────────────────────────────────────────── */
+.handoff-overlay {
+  position  : fixed;
+  inset     : 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index   : 1000;
+  display   : flex;
+  align-items    : center;
+  justify-content: center;
+}
+
+/* ── Panel ───────────────────────────────────────────────── */
+.handoff-panel {
+  background   : #1a1f2e;
+  border       : 1px solid #2e3650;
+  border-radius: 12px;
+  padding      : 28px 32px;
+  width        : min(640px, 92vw);
+  max-height   : 85vh;
+  overflow-y   : auto;
+  color        : #e2e8f0;
+  font-family  : 'Inter', sans-serif;
+  box-shadow   : 0 24px 64px rgba(0,0,0,0.6);
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.handoff-header {
+  display        : flex;
+  justify-content: space-between;
+  align-items    : flex-start;
+  margin-bottom  : 20px;
+}
+.handoff-title  { font-size: 1.25rem; font-weight: 700; margin: 0 0 4px; }
+.handoff-device { font-size: 0.8rem;  color: #64748b; letter-spacing: 0.05em; }
+.handoff-close  {
+  background: none; border: none; color: #64748b;
+  font-size: 1.2rem; cursor: pointer; padding: 4px 8px;
+  border-radius: 6px; transition: color 0.2s;
+}
+.handoff-close:hover { color: #e2e8f0; }
+
+/* ── Loading / Error ─────────────────────────────────────── */
+.handoff-loading {
+  display    : flex;
+  align-items: center;
+  gap        : 10px;
+  color      : #94a3b8;
+  padding    : 24px 0;
+}
+.spinner {
+  width : 18px; height: 18px;
+  border: 2px solid #334155;
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.handoff-error     { color: #f87171; padding: 16px 0; }
+.handoff-not-found { color: #94a3b8; padding: 16px 0; line-height: 1.6; }
+.handoff-not-found a { color: #60a5fa; }
+
+/* ── Summary row ─────────────────────────────────────────── */
+.handoff-summary {
+  display       : flex;
+  align-items   : center;
+  gap           : 24px;
+  flex-wrap     : wrap;
+  background    : #111827;
+  border-radius : 8px;
+  padding       : 14px 18px;
+  margin-bottom : 24px;
+}
+.summary-item   { display: flex; flex-direction: column; gap: 4px; }
+.summary-label  { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
+.summary-value  { font-size: 0.95rem; font-weight: 600; }
+.uns-link       { margin-left: auto; font-size: 0.8rem; color: #60a5fa; text-decoration: none; }
+.uns-link:hover { text-decoration: underline; }
+
+/* ── Badges ──────────────────────────────────────────────── */
+.badge          { font-size: 0.75rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+.badge-complete { background: #14532d; color: #4ade80; }
+.badge-active   { background: #1e3a5f; color: #60a5fa; }
+.badge-failed   { background: #450a0a; color: #f87171; }
+.badge-pending  { background: #1e293b; color: #94a3b8; }
+.badge-unknown  { background: #292524; color: #a8a29e; }
+
+/* ── Section title ───────────────────────────────────────── */
+.handoff-section-title {
+  font-size    : 0.75rem;
+  font-weight  : 600;
+  color        : #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 14px;
+}
+
+/* ── Timeline ────────────────────────────────────────────── */
+.timeline       { display: flex; flex-direction: column; gap: 0; margin-bottom: 24px; }
+
+.timeline-step  {
+  display : flex;
+  align-items: flex-start;
+  gap     : 12px;
+  position: relative;
+  padding-bottom: 16px;
+}
+
+.timeline-connector {
+  position: absolute;
+  left    : 7px;
+  top     : 18px;
+  width   : 2px;
+  bottom  : 0;
+  background: #2e3650;
+}
+
+.timeline-dot {
+  width        : 16px;
+  height       : 16px;
+  border-radius: 50%;
+  border       : 2px solid #2e3650;
+  background   : #111827;
+  flex-shrink  : 0;
+  margin-top   : 2px;
+  z-index      : 1;
+}
+.step-complete    .timeline-dot { background: #4ade80; border-color: #4ade80; }
+.step-in-progress .timeline-dot { background: #60a5fa; border-color: #60a5fa; }
+.step-pending     .timeline-dot { background: #1e293b; border-color: #334155; }
+
+.timeline-content { flex: 1; }
+.timeline-name    { font-size: 0.875rem; font-weight: 500; margin-bottom: 6px; }
+
+.timeline-bar-wrap {
+  height       : 6px;
+  background   : #1e293b;
+  border-radius: 999px;
+  overflow     : hidden;
+  margin-bottom: 4px;
+}
+.timeline-bar-fill {
+  height    : 100%;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.step-complete .timeline-bar-fill { background: linear-gradient(90deg, #16a34a, #4ade80); }
+
+.timeline-pct { font-size: 0.7rem; color: #64748b; }
+
+/* ── Workflow Steps (collapsible) ────────────────────────── */
+.workflow-steps-details { margin-top: 4px; }
+.workflow-steps-summary {
+  cursor     : pointer;
+  font-size  : 0.75rem;
+  font-weight: 600;
+  color      : #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding    : 8px 0;
+  list-style : none;
+}
+.workflow-steps-summary::-webkit-details-marker { display: none; }
+.workflow-steps-summary::before { content: '▶  '; font-size: 0.6rem; }
+details[open] .workflow-steps-summary::before { content: '▼  '; }
+
+.workflow-steps-list { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-direction: column; gap: 6px; }
+.ws-item {
+  display    : flex;
+  align-items: center;
+  gap        : 10px;
+  font-size  : 0.8rem;
+  padding    : 6px 10px;
+  border-radius: 6px;
+  background : #111827;
+}
+.ws-dot          { width: 8px; height: 8px; border-radius: 50%; background: #334155; flex-shrink: 0; }
+.ws-completed .ws-dot,
+.ws-done      .ws-dot  { background: #4ade80; }
+.ws-active    .ws-dot,
+.ws-in_progress .ws-dot{ background: #60a5fa; }
+.ws-failed    .ws-dot  { background: #f87171; }
+
+.ws-name   { flex: 1; color: #cbd5e1; }
+.ws-status { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }

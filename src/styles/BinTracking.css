@@ -1,0 +1,461 @@
+/* ─── Bin Tracking Page ─────────────────────────────────────────────────────── */
+
+.bin-tracking {
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: calc(100vh - 120px);
+}
+
+.bin-tracking-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.bin-tracking-header h1 {
+  font-size: 2rem;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.bin-title-accent {
+  color: #ff9900;
+}
+
+.bin-tracking-subtitle {
+  color: #888;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* ─── Bridge Warning ────────────────────────────────────────────────────────── */
+
+.bin-bridge-warning {
+  background: rgba(255, 153, 0, 0.1);
+  border: 1px solid #ff9900;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #ff9900;
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+}
+
+/* ─── Search Section ────────────────────────────────────────────────────────── */
+
+.bin-search-section {
+  margin-bottom: 24px;
+}
+
+.bin-search-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.bin-search-input {
+  flex: 1;
+  padding: 12px 16px;
+  background: #1a1a1a;
+  border: 2px solid #333;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.5px;
+  transition: border-color 0.2s;
+}
+
+.bin-search-input:focus {
+  outline: none;
+  border-color: #ff9900;
+}
+
+.bin-search-input::placeholder {
+  color: #666;
+}
+
+.bin-search-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bin-search-btn {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff9900, #e88800);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.bin-search-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 153, 0, 0.3);
+}
+
+.bin-search-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bin-format-hint {
+  color: #666;
+  font-size: 0.8rem;
+  padding-left: 4px;
+}
+
+/* ─── Error ─────────────────────────────────────────────────────────────────── */
+
+.bin-error {
+  background: rgba(255, 60, 60, 0.1);
+  border: 1px solid #ff3c3c;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #ff3c3c;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+}
+
+/* ─── Results Grid ──────────────────────────────────────────────────────────── */
+
+.bin-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+/* Parts by Type card spans full width */
+.bin-speeds-card {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 700px) {
+  .bin-results {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Cards ─────────────────────────────────────────────────────────────────── */
+
+.bin-card {
+  background: linear-gradient(135deg, #1a2332, #2a3a4a);
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 20px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.bin-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.bin-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.bin-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ccc;
+}
+
+.bin-card-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ─── Location Card ─────────────────────────────────────────────────────────── */
+
+.bin-location-full {
+  color: #ff9900;
+  font-weight: bold;
+  font-size: 1.1rem;
+  font-family: 'Courier New', monospace;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  background: rgba(255, 153, 0, 0.05);
+  border: 1px solid rgba(255, 153, 0, 0.2);
+  border-radius: 6px;
+}
+
+.bin-location-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bin-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bin-label {
+  color: #888;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bin-value {
+  color: #fff;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+}
+
+.bin-updated {
+  color: #666;
+  font-size: 0.75rem;
+}
+
+.bin-refresh-btn {
+  background: none;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: border-color 0.2s;
+}
+
+.bin-refresh-btn:hover {
+  border-color: #ff9900;
+}
+
+/* ─── Count Card ────────────────────────────────────────────────────────────── */
+
+.bin-count-display {
+  text-align: center;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.bin-count-number {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ff9900;
+}
+
+.bin-count-label {
+  display: block;
+  color: #888;
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+/* Low inventory state */
+.bin-card.bin-low {
+  border-color: #ff3c3c;
+  box-shadow: 0 0 12px rgba(255, 60, 60, 0.15);
+}
+
+.bin-card.bin-low .bin-count-number {
+  color: #ff3c3c;
+}
+
+.bin-low-badge {
+  background: rgba(255, 60, 60, 0.2);
+  border: 1px solid #ff3c3c;
+  color: #ff3c3c;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.bin-low-alert {
+  background: rgba(255, 60, 60, 0.08);
+  border: 1px solid rgba(255, 60, 60, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+  text-align: center;
+}
+
+.bin-low-alert p {
+  color: #ff3c3c;
+  margin: 0 0 8px 0;
+  font-size: 0.85rem;
+}
+
+.bin-sim-link {
+  color: #ff9900;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: color 0.2s;
+}
+
+.bin-sim-link:hover {
+  color: #ffb84d;
+}
+
+/* ─── Parts by Type Card ────────────────────────────────────────────────────── */
+
+.bin-type-counter {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.bin-type-item {
+  text-align: center;
+  padding: 16px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #333;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.bin-type-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.bin-type-count {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.bin-type-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.bin-type-pct {
+  display: block;
+  font-size: 0.7rem;
+  color: #666;
+}
+
+/* Type-specific colors */
+.type-400g { border-color: rgba(0, 200, 83, 0.4); }
+.type-400g .bin-type-count { color: #00c853; }
+.type-400g .bin-type-label { color: #00c853; }
+
+.type-100g { border-color: rgba(0, 150, 255, 0.4); }
+.type-100g .bin-type-count { color: #0096ff; }
+.type-100g .bin-type-label { color: #0096ff; }
+
+.type-10g { border-color: rgba(255, 153, 0, 0.4); }
+.type-10g .bin-type-count { color: #ff9900; }
+.type-10g .bin-type-label { color: #ff9900; }
+
+.type-other { border-color: rgba(150, 150, 150, 0.4); }
+.type-other .bin-type-count { color: #999; }
+.type-other .bin-type-label { color: #999; }
+
+/* ─── Stacked Bar Visualization ─────────────────────────────────────────────── */
+
+.bin-type-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #1a1a1a;
+}
+
+.bin-type-bar-segment {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.bar-400g { background: #00c853; }
+.bar-100g { background: #0096ff; }
+.bar-10g  { background: #ff9900; }
+.bar-other { background: #666; }
+
+/* ─── Mobility Link ─────────────────────────────────────────────────────────── */
+
+.bin-mobility-link {
+  color: #ff9900;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.bin-mobility-link:hover {
+  color: #ffb84d;
+}
+
+/* ─── Saved Bins ────────────────────────────────────────────────────────────── */
+
+.bin-saved-section {
+  margin-top: 32px;
+}
+
+.bin-saved-section h3 {
+  color: #ccc;
+  font-size: 1rem;
+  margin: 0 0 12px 0;
+}
+
+.bin-saved-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bin-saved-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #1a1a1a;
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+.bin-saved-item:hover {
+  border-color: #ff9900;
+  transform: translateX(4px);
+  box-shadow: 0 0 8px rgba(255, 153, 0, 0.2);
+}
+
+.bin-saved-name {
+  color: #ff9900;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.bin-saved-remove {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.bin-saved-remove:hover {
+  color: #ff3c3c;
+  background: rgba(255, 60, 60, 0.1);
+}

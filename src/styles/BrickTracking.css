@@ -1,0 +1,512 @@
+/* ══════════════════════════════════════════════════════════
+   BrickTracking.css
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Page ────────────────────────────────────────────────── */
+.brick-tracking-page {
+  min-height : 100vh;
+  background : #0d1117;
+  color      : #e2e8f0;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  padding    : 1.5rem 1rem;
+}
+
+.brick-tracking-container {
+  max-width: 1500px;
+  margin   : 0 auto;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.bt-header {
+  display    : flex;
+  align-items: center;
+  gap        : 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.bt-title {
+  font-size  : 1.8rem;
+  font-weight: 700;
+  color      : #ffffff;
+  margin     : 0;
+}
+
+.bt-title span {
+  color: #ff9800;
+}
+
+/* ── Current brick label ─────────────────────────────────── */
+.bt-current-brick {
+  font-size     : 0.82rem;
+  font-weight   : 600;
+  color         : #ff9800;
+  background    : rgba(255, 152, 0, 0.08);
+  border        : 1px solid rgba(255, 152, 0, 0.4);
+  border-radius : 6px;
+  padding       : 0.3rem 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.bt-current-brick--clickable {
+  cursor        : pointer;
+  position      : relative;
+  z-index       : 1;
+  pointer-events: auto;
+  transition    : color 0.2s ease,
+                  background 0.2s ease,
+                  border-color 0.2s ease,
+                  text-shadow 0.2s ease;
+}
+
+.bt-current-brick--clickable:hover {
+  color        : #ffb74d;
+  background   : rgba(255, 152, 0, 0.18);
+  border-color : #ff9800;
+  text-shadow  : 0 0 8px rgba(255, 152, 0, 0.5);
+}
+
+.bt-current-brick--clickable:focus-visible {
+  outline       : 2px solid #ff9800;
+  outline-offset: 2px;
+  border-radius : 4px;
+}
+
+/* ── Handoff panel (inline below header) ─────────────────── */
+.handoff-panel {
+  background   : #161b22;
+  border       : 1px solid rgba(255, 152, 0, 0.25);
+  border-radius: 10px;
+  margin-bottom: 1.25rem;
+  overflow     : hidden;
+}
+
+.handoff-panel-header {
+  display        : flex;
+  align-items    : center;
+  justify-content: space-between;
+  padding        : 0.7rem 1rem;
+  background     : rgba(255, 152, 0, 0.07);
+  border-bottom  : 1px solid rgba(255, 152, 0, 0.2);
+}
+
+.handoff-panel-title {
+  font-size     : 0.85rem;
+  font-weight   : 700;
+  color         : #ff9800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.handoff-panel-close {
+  background   : transparent;
+  border       : none;
+  color        : #64748b;
+  font-size    : 1rem;
+  cursor       : pointer;
+  padding      : 0.1rem 0.4rem;
+  border-radius: 4px;
+  transition   : color 0.15s, background 0.15s;
+}
+
+.handoff-panel-close:hover {
+  color     : #ff9800;
+  background: rgba(255, 152, 0, 0.1);
+}
+
+.handoff-panel-body {
+  padding: 1rem;
+}
+
+.handoff-loading,
+.handoff-empty {
+  color    : #64748b;
+  font-size: 0.875rem;
+  margin   : 0;
+  padding  : 0.5rem 0;
+}
+
+/* ── Handoff summary ─────────────────────────────────────── */
+.handoff-summary {
+  display       : flex;
+  flex-direction: column;
+  gap           : 0.4rem;
+  margin-bottom : 1rem;
+}
+
+.handoff-summary-row {
+  display        : flex;
+  align-items    : center;
+  justify-content: space-between;
+  font-size      : 0.83rem;
+  padding-bottom : 0.4rem;
+  border-bottom  : 1px solid #1e293b;
+}
+
+.handoff-summary-key { color: #94a3b8; }
+.handoff-summary-val { color: #e2e8f0; font-weight: 600; }
+.handoff-error       { color: #f87171; font-size: 0.8rem; }
+
+/* ── Status badges ───────────────────────────────────────── */
+.handoff-status-badge {
+  font-size     : 0.72rem;
+  font-weight   : 700;
+  padding       : 0.2rem 0.6rem;
+  border-radius : 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.status-in_progress,
+.status-running     { background: rgba(255,152,0,0.15);  color: #ff9800;  border: 1px solid rgba(255,152,0,0.4);  }
+.status-completed,
+.status-succeeded   { background: rgba(76,175,80,0.15);  color: #4caf50;  border: 1px solid rgba(76,175,80,0.4);  }
+.status-failed,
+.status-error       { background: rgba(244,67,54,0.15);  color: #f44336;  border: 1px solid rgba(244,67,54,0.4);  }
+.status-pending,
+.status-queued      { background: rgba(255,235,59,0.15); color: #ffeb3b;  border: 1px solid rgba(255,235,59,0.4); }
+.status-unknown     { background: rgba(100,116,139,0.2); color: #94a3b8;  border: 1px solid #475569;              }
+
+/* ── Timeline progress bars ──────────────────────────────── */
+.handoff-timeline  { margin-bottom: 1rem; }
+
+.handoff-section-title {
+  font-size     : 0.72rem;
+  font-weight   : 700;
+  color         : #ff9800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin        : 0 0 0.5rem;
+}
+
+.uns-phase-row {
+  display      : flex;
+  align-items  : center;
+  gap          : 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.uns-phase-label {
+  font-size  : 0.76rem;
+  color      : #94a3b8;
+  width      : 130px;
+  flex-shrink: 0;
+}
+
+.uns-phase-track {
+  flex         : 1;
+  height       : 6px;
+  background   : #1e293b;
+  border-radius: 999px;
+  overflow     : hidden;
+}
+
+.uns-phase-fill {
+  height       : 100%;
+  border-radius: 999px;
+  transition   : width 0.4s ease;
+}
+
+.uns-phase-pct {
+  font-size  : 0.72rem;
+  color      : #64748b;
+  width      : 34px;
+  text-align : right;
+  flex-shrink: 0;
+}
+
+/* ── Steps table ─────────────────────────────────────────── */
+.handoff-steps       { margin-bottom: 1rem; }
+
+.handoff-steps-table {
+  width          : 100%;
+  border-collapse: collapse;
+  font-size      : 0.78rem;
+}
+
+.handoff-steps-table th {
+  text-align    : left;
+  padding       : 0.35rem 0.5rem;
+  color         : #64748b;
+  font-weight   : 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size     : 0.68rem;
+  border-bottom : 1px solid #1e293b;
+}
+
+.handoff-steps-table td {
+  padding      : 0.4rem 0.5rem;
+  color        : #cbd5e1;
+  border-bottom: 1px solid #0d1117;
+}
+
+.handoff-steps-table tr:last-child td { border-bottom: none; }
+
+.step-badge {
+  font-size     : 0.68rem;
+  font-weight   : 700;
+  padding       : 0.15rem 0.5rem;
+  border-radius : 999px;
+  text-transform: uppercase;
+}
+
+.step-completed,
+.step-succeeded  { background: rgba(76,175,80,0.15);  color: #4caf50; }
+.step-in_progress,
+.step-running    { background: rgba(255,152,0,0.15);  color: #ff9800; }
+.step-pending    { background: rgba(255,235,59,0.12); color: #ffeb3b; }
+.step-failed     { background: rgba(244,67,54,0.15);  color: #f44336; }
+.step-skipped    { background: rgba(100,116,139,0.15);color: #94a3b8; }
+
+/* ── UNS link ────────────────────────────────────────────── */
+.handoff-uns-link     { text-align: right; margin-top: 0.5rem; }
+.handoff-uns-link a   { font-size: 0.78rem; color: #ff9800; text-decoration: none; }
+.handoff-uns-link a:hover { text-decoration: underline; color: #ffb74d; }
+
+/* ── TM bridge warning ───────────────────────────────────── */
+.tm-warning {
+  background   : rgba(255, 152, 0, 0.08);
+  border       : 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 8px;
+  color        : #ff9800;
+  font-size    : 0.82rem;
+  padding      : 0.6rem 1rem;
+  margin-bottom: 1rem;
+}
+
+/* ── Search row ──────────────────────────────────────────── */
+.bt-search-row {
+  display      : flex;
+  gap          : 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.bt-search-input {
+  flex         : 1;
+  background   : #161b22;
+  border       : 1px solid rgba(255, 152, 0, 0.35);
+  border-radius: 8px;
+  color        : #e2e8f0;
+  font-size    : 0.9rem;
+  padding      : 0.55rem 0.9rem;
+  outline      : none;
+  transition   : border-color 0.15s, box-shadow 0.15s;
+}
+
+.bt-search-input::placeholder { color: #4a5568; }
+
+.bt-search-input:focus {
+  border-color: #ff9800;
+  box-shadow  : 0 0 0 3px rgba(255, 152, 0, 0.15);
+}
+
+.bt-search-btn {
+  background   : #ff9800;
+  border       : none;
+  border-radius: 8px;
+  color        : #000000;
+  font-size    : 0.9rem;
+  font-weight  : 700;
+  padding      : 0.55rem 1.25rem;
+  cursor       : pointer;
+  transition   : background 0.15s, box-shadow 0.15s;
+  white-space  : nowrap;
+}
+
+.bt-search-btn:hover:not(:disabled) {
+  background: #ffb74d;
+  box-shadow: 0 0 10px rgba(255, 152, 0, 0.4);
+}
+
+.bt-search-btn:disabled {
+  background: #7a4a00;
+  color     : #555;
+  cursor    : not-allowed;
+}
+
+/* ── Legend ──────────────────────────────────────────────── */
+.bt-legend {
+  display      : flex;
+  flex-wrap    : wrap;
+  gap          : 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.legend-item {
+  display    : flex;
+  align-items: center;
+  gap        : 0.4rem;
+  font-size  : 0.8rem;
+  color      : #94a3b8;
+}
+
+.legend-dot {
+  width        : 12px;
+  height       : 12px;
+  border-radius: 3px;
+  flex-shrink  : 0;
+}
+
+.legend-dot.deployed     { background: #2196f3; }
+.legend-dot.not-deployed { background: #f44336; }
+.legend-dot.pending      { background: #ffeb3b; }
+.legend-dot.empty        { background: #388e3c; border: 1px solid #2e7d32; }
+
+/* ── Status bar ──────────────────────────────────────────── */
+.bt-status-bar {
+  font-size    : 0.82rem;
+  color        : #64748b;
+  margin-bottom: 1rem;
+  min-height   : 1.2em;
+}
+
+/* ── Board layout ────────────────────────────────────────── */
+.boards-split {
+  display: flex;
+  gap    : 2rem;
+}
+
+.board-column {
+  flex          : 1;
+  display       : flex;
+  flex-direction: column;
+  gap           : 0.6rem;
+  min-width     : 0;
+}
+
+/* ── ODD / EVEN column headers ───────────────────────────── */
+.column-header {
+  font-size     : 0.95rem;
+  font-weight   : 700;
+  color         : #ff9800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-align    : center;
+  padding-bottom: 0.4rem;
+}
+
+/* ── Host label ──────────────────────────────────────────── */
+.board-section-label {
+  font-size    : 0.72rem;
+  color        : #94a3b8;
+  margin-bottom: 0.35rem;
+  font-family  : 'JetBrains Mono', 'Fira Code', monospace;
+  white-space  : nowrap;
+  overflow     : hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Switch card (green board) ───────────────────────────── */
+.board-section {
+  background   : #4caf50;
+  border-radius: 14px;
+  padding      : 0.6rem 0.75rem;
+}
+
+/* ── Port grid ───────────────────────────────────────────── */
+.port-grid {
+  display              : grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap                  : 4px;
+}
+
+/* ── Port cell base ──────────────────────────────────────── */
+.port-cell {
+  position       : relative;
+  aspect-ratio   : 1;
+  border-radius  : 6px;
+  cursor         : pointer;
+  display        : flex;
+  flex-direction : column;
+  align-items    : center;
+  justify-content: center;
+  font-size      : 0.65rem;
+  transition     : filter 0.12s, transform 0.1s;
+  overflow       : hidden;
+  user-select    : none;
+}
+
+.port-cell:hover {
+  filter   : brightness(1.2);
+  transform: scale(1.1);
+  z-index  : 2;
+}
+
+/* ── Port states ─────────────────────────────────────────── */
+.port-cell.loading {
+  background: #388e3c;
+  animation : pulse 1.4s ease-in-out infinite;
+}
+
+.port-cell.deployed {
+  background: #2196f3;
+}
+
+.port-cell.not-deployed {
+  background: #f44336;
+}
+
+/* ── YELLOW for manually saved/pending ports ─────────────── */
+.port-cell.pending {
+  background: #ffeb3b;
+}
+
+.port-cell.pending .port-number {
+  color: #1a1a1a;
+}
+
+.port-cell.empty {
+  background: #388e3c;
+}
+
+/* ── Port number ─────────────────────────────────────────── */
+.port-number {
+  font-size  : 0.65rem;
+  font-weight: 600;
+  color      : #ffffff;
+  line-height: 1;
+}
+
+/* ── Optic type band ─────────────────────────────────────── */
+.port-band {
+  font-size : 0.5rem;
+  color     : rgba(255, 255, 255, 0.7);
+  line-height: 1;
+  margin-top : 1px;
+}
+
+/* ── Custom tooltip ──────────────────────────────────────── */
+.port-tooltip {
+  display       : none;
+  position      : absolute;
+  bottom        : calc(100% + 6px);
+  left          : 50%;
+  transform     : translateX(-50%);
+  background    : #1e293b;
+  border        : 1px solid #ff9800;
+  border-radius : 6px;
+  padding       : 0.4rem 0.6rem;
+  font-size     : 0.72rem;
+  color         : #e2e8f0;
+  white-space   : pre;
+  z-index       : 100;
+  pointer-events: none;
+  min-width     : 170px;
+  box-shadow    : 0 4px 14px rgba(0, 0, 0, 0.6);
+}
+
+.port-cell:hover .port-tooltip { display: block; }
+
+/* ── Loading pulse ───────────────────────────────────────── */
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 0.9; }
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .boards-split  { flex-direction: column; }
+  .bt-header     { flex-wrap: wrap; }
+  .bt-legend     { gap: 0.6rem; }
+}

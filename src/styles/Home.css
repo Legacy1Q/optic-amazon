@@ -1,0 +1,88 @@
+/* src/pages/Home/Home.css */
+
+.home-page {
+  min-height: 100vh;
+  background: #0D1B2A;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--navbar-h);
+}
+
+.home-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+/* ── Cards Grid ───────────────────────────────────────────── */
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  width: 100%;
+  max-width: 1100px;
+}
+
+@media (max-width: 900px) {
+  .home-cards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+  .home-cards { grid-template-columns: 1fr; }
+}
+
+/* ── Card ─────────────────────────────────────────────────── */
+.home-card {
+  background: #111E2D;
+  border: 1px solid #1E3248;
+  border-radius: 14px;
+  padding: 32px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  text-align: left;
+  font-family: inherit;
+}
+
+.home-card:hover {
+  transform: translateY(-4px);
+  border-color: #FF9900;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Emoji / Icon area */
+.home-card-emoji {
+  font-size: 64px;
+  line-height: 1;
+  /* This is where the 3D emoji images from your screenshot go.
+     Replace with <img> tags pointing to your emoji assets if needed */
+}
+
+/* Card bottom row */
+.home-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.home-card-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.home-card-arrow {
+  font-size: 22px;
+  color: #FF9900;
+  font-weight: 700;
+  line-height: 1;
+}

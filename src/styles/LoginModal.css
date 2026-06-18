@@ -1,0 +1,152 @@
+/* src/components/LoginModal/LoginModal.css */
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.login-modal {
+  background: #0D1B2A;
+  border: 1px solid #1E3248;
+  border-radius: 16px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+  animation: loginSlideIn 0.2s ease;
+}
+
+@keyframes loginSlideIn {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-logo {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.login-logo-text {
+  font-size: 26px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.login-logo-smile {
+  width: 60px;
+  height: 12px;
+  margin-top: -2px;
+}
+
+.login-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px;
+  letter-spacing: 0.3px;
+}
+
+.login-title-orange {
+  color: #FF9900;
+}
+
+.login-subtitle {
+  font-size: 13px;
+  color: #A0AEC0;
+  margin: 0;
+}
+
+/* Form */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #A0AEC0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.login-field-hint {
+  font-size: 11px;
+  color: #556;
+  text-transform: none;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.login-field input {
+  background: #0A1628;
+  border: 1.5px solid #1E3248;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+}
+
+.login-field input:focus {
+  border-color: #FF9900;
+  box-shadow: 0 0 0 3px rgba(255, 153, 0, 0.12);
+}
+
+.login-field input.error {
+  border-color: #FC8181;
+}
+
+.login-error {
+  font-size: 11px;
+  color: #FC8181;
+  font-weight: 500;
+}
+
+.login-submit {
+  background: linear-gradient(135deg, #FF9900, #E47911);
+  border: none;
+  border-radius: 8px;
+  color: #111;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 13px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  margin-top: 4px;
+  font-family: inherit;
+}
+
+.login-submit:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.login-submit:active {
+  transform: translateY(0);
+}

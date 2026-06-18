@@ -1,0 +1,614 @@
+/* src/styles/TicketTracking.css */
+
+/* ── Layout ─────────────────────────────────────────────────────────────────── */
+.ticket-tracking {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  color: #e8eaf0;
+  font-family: Arial, sans-serif;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+.tt-header {
+  margin-bottom: 1.75rem;
+}
+
+.tt-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.35rem;
+}
+
+.tt-title-accent {
+  color: #ff9900;
+}
+
+.tt-subtitle {
+  color: #8892a4;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ── Bridge Warning ──────────────────────────────────────────────────────────── */
+.tt-bridge-warning {
+  background: #2d1f00;
+  border: 1px solid #ff9900;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #ff9900;
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Group Section ───────────────────────────────────────────────────────────── */
+.tt-group-section {
+  background: #1e2736;
+  border: 1px solid #2c3e50;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Editor */
+.tt-group-editor-label {
+  font-size: 0.8rem;
+  color: #8892a4;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.6rem;
+}
+
+.tt-group-editor-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tt-group-input {
+  flex: 1;
+  background: #141c28;
+  border: 1px solid #2c3e50;
+  border-radius: 6px;
+  padding: 0.55rem 0.85rem;
+  color: #e8eaf0;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.tt-group-input:focus {
+  border-color: #ff9900;
+}
+
+.tt-group-save-btn {
+  background: #ff9900;
+  border: none;
+  color: #000;
+  padding: 0.55rem 1rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.tt-group-save-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tt-group-cancel-btn {
+  background: #2c3e50;
+  border: none;
+  color: #aaa;
+  padding: 0.55rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.tt-group-hint {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.75rem;
+  color: #5a6a7e;
+}
+
+/* Display */
+.tt-group-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.tt-group-display-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.tt-group-label {
+  font-size: 0.78rem;
+  color: #8892a4;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tt-group-name {
+  color: #ff9900;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.tt-group-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tt-group-edit-btn {
+  background: #2c3e50;
+  border: none;
+  color: #ccc;
+  padding: 0.45rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.tt-group-edit-btn:hover {
+  background: #3a4f63;
+}
+
+.tt-refresh-btn {
+  background: #146eb4;
+  border: none;
+  color: #fff;
+  padding: 0.45rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.tt-refresh-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Error ───────────────────────────────────────────────────────────────────── */
+.tt-error {
+  background: #2d0a0a;
+  border: 1px solid #e74c3c;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Stats Bar ───────────────────────────────────────────────────────────────── */
+.tt-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #1e2736;
+  border: 1px solid #2c3e50;
+  border-radius: 10px;
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tt-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 1rem;
+}
+
+.tt-stat-divider {
+  width: 1px;
+  height: 32px;
+  background: #2c3e50;
+}
+
+.tt-stat-number {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.tt-stat-number.tt-stat-open     { color: #f39c12; }
+.tt-stat-number.tt-stat-resolved { color: #2ecc71; }
+.tt-stat-number.tt-stat-optic    { color: #3498db; }
+.tt-stat-number.tt-stat-dr4      { color: #9b59b6; }
+
+.tt-stat-label {
+  font-size: 0.7rem;
+  color: #8892a4;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 0.2rem;
+}
+
+.tt-last-fetched {
+  font-size: 0.72rem;
+  color: #5a6a7e;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ── Controls Row ────────────────────────────────────────────────────────────── */
+.tt-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.tt-filter-tabs {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.tt-filter-tab {
+  background: #1e2736;
+  border: 1px solid #2c3e50;
+  color: #8892a4;
+  padding: 0.4rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tt-filter-tab:hover {
+  border-color: #ff9900;
+  color: #ff9900;
+}
+
+.tt-filter-tab.active {
+  background: #ff9900;
+  border-color: #ff9900;
+  color: #000;
+  font-weight: 700;
+}
+
+.tt-filter-count {
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
+  padding: 0 0.4rem;
+  font-size: 0.72rem;
+}
+
+.tt-filter-tab.active .tt-filter-count {
+  background: rgba(0,0,0,0.25);
+}
+
+.tt-search-input {
+  flex: 1;
+  min-width: 200px;
+  background: #141c28;
+  border: 1px solid #2c3e50;
+  border-radius: 8px;
+  padding: 0.5rem 0.85rem;
+  color: #e8eaf0;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.tt-search-input:focus {
+  border-color: #ff9900;
+}
+
+/* ── Content / Loading / Empty ───────────────────────────────────────────────── */
+.tt-content {
+  margin-bottom: 1.5rem;
+}
+
+.tt-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 2.5rem;
+  justify-content: center;
+  color: #8892a4;
+  font-size: 0.9rem;
+}
+
+.tt-spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid #2c3e50;
+  border-top-color: #ff9900;
+  border-radius: 50%;
+  animation: tt-spin 0.7s linear infinite;
+}
+
+@keyframes tt-spin {
+  to { transform: rotate(360deg); }
+}
+
+.tt-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #5a6a7e;
+}
+
+.tt-empty-icon  { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.tt-empty-title { font-size: 1rem; font-weight: 600; color: #8892a4; margin-bottom: 0.4rem; }
+.tt-empty-sub   { font-size: 0.85rem; }
+
+/* ── Ticket List ─────────────────────────────────────────────────────────────── */
+.tt-ticket-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.tt-ticket-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+/* ── Pin Button ──────────────────────────────────────────────────────────────── */
+.tt-pin-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.6rem 0.3rem;
+  opacity: 0.25;
+  transition: opacity 0.2s, transform 0.2s;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.tt-pin-btn:hover  { opacity: 0.7; }
+.tt-pin-btn.pinned { opacity: 1; transform: rotate(-30deg); }
+
+/* ── Ticket Card ─────────────────────────────────────────────────────────────── */
+.tt-ticket-card {
+  flex: 1;
+  display: block;
+  background: #1e2736;
+  border: 1px solid #2c3e50;
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.tt-ticket-card:hover {
+  border-color: #ff9900;
+  background: #232f3e;
+}
+
+.tt-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.45rem;
+}
+
+.tt-ticket-id {
+  font-size: 0.8rem;
+  color: #8892a4;
+  font-family: monospace;
+  letter-spacing: 0.04em;
+}
+
+.tt-ticket-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #e8eaf0;
+  margin-bottom: 0.55rem;
+  line-height: 1.4;
+}
+
+/* ── Status Badges ───────────────────────────────────────────────────────────── */
+.tt-status-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.status-assigned    { background: #1a3a5c; color: #5dade2; }
+.status-researching { background: #1a3a2c; color: #58d68d; }
+.status-wip         { background: #2d1f00; color: #f39c12; }
+.status-pending     { background: #2d2000; color: #e67e22; }
+.status-resolved    { background: #0d2b1a; color: #2ecc71; }
+.status-default     { background: #2c3e50; color: #aaa;    }
+
+/* ── Category Badges ─────────────────────────────────────────────────────────── */
+.tt-badge-row {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+
+.tt-category-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
+}
+
+.badge-optic    { background: #1a3a5c; color: #3498db; border: 1px solid #1f4e7a; }
+.badge-required { background: #2d1f00; color: #f39c12; border: 1px solid #7a4f00; }
+.badge-dr4      { background: #2a1a3e; color: #9b59b6; border: 1px solid #5b2d8e; }
+.badge-other    { background: #1e2736; color: #8892a4; border: 1px solid #2c3e50; }
+
+/* ── Meta Row ────────────────────────────────────────────────────────────────── */
+.tt-card-meta {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.tt-meta-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.tt-meta-label {
+  font-size: 0.65rem;
+  color: #5a6a7e;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.tt-meta-value {
+  font-size: 0.8rem;
+  color: #aab4c4;
+}
+
+/* ── Manual Pin Section ──────────────────────────────────────────────────────── */
+.tt-manual-section {
+  background: #1e2736;
+  border: 1px solid #2c3e50;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.tt-manual-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tt-manual-header span:first-child {
+  font-weight: 700;
+  color: #e8eaf0;
+  font-size: 0.9rem;
+}
+
+.tt-manual-hint {
+  font-size: 0.75rem;
+  color: #5a6a7e;
+}
+
+.tt-manual-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tt-manual-input {
+  flex: 1;
+  background: #141c28;
+  border: 1px solid #2c3e50;
+  border-radius: 6px;
+  padding: 0.5rem 0.85rem;
+  color: #e8eaf0;
+  font-size: 0.85rem;
+  font-family: monospace;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.tt-manual-input:focus {
+  border-color: #ff9900;
+}
+
+.tt-manual-add-btn {
+  background: #ff9900;
+  border: none;
+  color: #000;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.tt-manual-add-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tt-manual-error {
+  color: #e74c3c;
+  font-size: 0.78rem;
+  margin-top: 0.4rem;
+}
+
+.tt-pinned-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+
+.tt-pinned-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #141c28;
+  border: 1px solid #2c3e50;
+  border-radius: 6px;
+  padding: 0.5rem 0.85rem;
+}
+
+.tt-pinned-link {
+  flex: 1;
+  color: #ff9900;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  font-family: monospace;
+}
+
+.tt-pinned-link:hover {
+  text-decoration: underline;
+}
+
+.tt-pinned-remove {
+  background: none;
+  border: none;
+  color: #5a6a7e;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.tt-pinned-remove:hover {
+  color: #e74c3c;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .tt-stats-bar    { gap: 0.25rem; padding: 0.75rem; }
+  .tt-stat         { padding: 0 0.5rem; }
+  .tt-stat-number  { font-size: 1.1rem; }
+  .tt-controls-row { flex-direction: column; align-items: stretch; }
+  .tt-search-input { min-width: unset; }
+}

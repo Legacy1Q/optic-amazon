@@ -1,0 +1,54 @@
+{
+  "name": "@amzn/optic-amazon",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "start": "npm run dev",
+    "test": "vitest",
+    "build-harmony-app": "build-harmony --templateName react",
+    "prepublishOnly": "cross-env BUILD_PATH=build/app npm run build && publish-harmony-app --apply-legacy-cleaning"
+  },
+  "dependencies": {
+    "@amzn/harmony-build-scripts": "^0.1.4",
+    "@amzn/harmony-react-tutorials": "^3.0.0",
+    "@amzn/harmony-types": "^latest",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "react-scripts": "5.0.1",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@amzn/harmony-build-tools": "^0.1.1",
+    "@amzn/harmony-types": "^1.0.47",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^14.0.0",
+    "@types/jest": "^29.5.3",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/react-router-dom": "^5.3.3",
+    "@typescript-eslint/eslint-plugin": "^5.57.1",
+    "@typescript-eslint/parser": "^5.57.1",
+    "@vitejs/plugin-react": "^4.3.2",
+    "cross-env": "^10.1.0",
+    "eslint": "^8.38.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.3.4",
+    "jsdom": "^22.1.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.4.8",
+    "vitest": "^2.1.1"
+  },
+  "harmony": {
+    "appName": "optic-amazon",
+    "csp": "connect-src 'self' optic-amazon.us-east-1.beta.api.harmony.a2z.com optic-amazon.eu-west-1.api.harmony.a2z.com optic-amazon.us-east-1.api.harmony.a2z.com optic-amazon.us-west-2.api.harmony.a2z.com optic-amazon.us-east-1.gamma.api.harmony.a2z.com *.metrics.harmony.a2z.com midway-auth.amazon.com sentry.amazon.com *.appsync-api.us-east-1.amazonaws.com wss://*.appsync-realtime-api.us-east-1.amazonaws.com iad.beta.crl.harmony.a2z.com iad.prod.crl.harmony.a2z.com unagi-na.amazon.com unagi-eu.amazon.com unagi-fe.amazon.com unagi-cn.amazon.com harmony-proxy.corp.amazon.com harmony-proxy-gamma-iad.iad.proxy.amazon.com harmony-proxy-iad.iad.proxy.amazon.com harmony-proxy-pdx.pdx.proxy.amazon.com harmony-proxy-dub.dub.proxy.amazon.com harmony-proxy-integ.corp.amazon.com symphonyapi-na.amazon.com symphonyapi.integ.amazon.com api-sso-access.corp.amazon.com nsm-iad.amazon.com nsm-pdx.amazon.com nsm-cmh.amazon.com nsm.cmh.aws-border.com nsm-dub.amazon.com nsm-sfo.amazon.com nsm-phx.amazon.com nsm-nrt.amazon.com nsm-sin.amazon.com nsm-syd.amazon.com nsm.lhr.aws-border.com nsm.fra.aws-border.com nsm-gru.amazon.com nsm.cdg.aws-border.com nsm.arn.aws-border.com nsm.icn.aws-border.com nsm.hkg.aws-border.com nsm.kix.aws-border.com nsm.bom.aws-border.com nsm.yul.aws-border.com nsm.mxp.aws-border.com nsm.cpt.aws-border.com nsm.bah.aws-border.com nsm.osu.aws-border.com nsm.pdt.aws-border.com nsm-lab.amazon.com nsm-ale-external.aka.corp.amazon.com nsm-apa-external.cmh.aws-border.com nsm-cgk.aka.corp.amazon.com nsm-dxb.aka.corp.amazon.com nsm-hyd.aka.corp.amazon.com nsm-mel.aka.corp.amazon.com nsm-zaz.aka.corp.amazon.com nsm-zrh.aka.corp.amazon.com nsm.bjs.aws-border.cn nsm.zhy.aws-border.cn mobility-search.amazon.com"
+  },
+  "description": "optic brick tracker for id install",
+  "displayName": "Optic Amazon Beta",
+  "bindleId": "amzn1.bindle.resource.if4i5u7qlpudhmyvhp5q"
+}

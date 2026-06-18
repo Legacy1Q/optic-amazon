@@ -1,0 +1,48 @@
+/* src/components/Footer/Footer.css */
+
+.optic-footer {
+  background: #0D1B2A;
+  border-top: 1px solid #1E3248;
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.footer-copyright {
+  font-size: 13px;
+  color: #A0AEC0;
+  white-space: nowrap;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.footer-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #A0AEC0;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.footer-link:hover { color: #ffffff; }
+
+.footer-link svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .optic-footer { justify-content: center; text-align: center; }
+  .footer-links { justify-content: center; gap: 16px; }
+}

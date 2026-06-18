@@ -1,9 +1,33 @@
-/* App.css (optional minimal file) */
+/* src/App.css */
 
-#root {
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Amazon Ember', 'Helvetica Neue', Arial, sans-serif;
+  background: #0D1B2A;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
-body {
-  margin: 0;
+.app-content {
+  flex: 1;
+  padding-top: var(--navbar-h, 64px);
+  display: flex;
+  flex-direction: column;
+}
+
+.coming-soon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  font-size: 18px;
+  color: #A0AEC0;
+  padding: 80px 24px;
 }
