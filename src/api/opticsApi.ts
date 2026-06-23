@@ -18,7 +18,7 @@ export const loadSavedOptics = async (
   device : string
 ): Promise<SavedOptic[]> => {
   const res = await fetch(
-    `${BASE_URL}/optics?device=${encodeURIComponent(device)}`,
+    `${BASE_URL}/optic?device=${encodeURIComponent(device)}`,
     {
       method  : "GET",
       headers : { "x-user-alias": alias },
@@ -36,7 +36,7 @@ export const saveOptic = async (
   port   : number,
   serial : string | null = null
 ): Promise<void> => {
-  const res = await fetch(`${BASE_URL}/optics`, {
+  const res = await fetch(`${BASE_URL}/optic`, {
     method  : "POST",
     headers : {
       "Content-Type" : "application/json",
@@ -55,7 +55,7 @@ export const deleteOptic = async (
   port   : number
 ): Promise<void> => {
   const res = await fetch(
-    `${BASE_URL}/optics?alias=${alias}&device=${encodeURIComponent(device)}&rSlot=${rSlot}&port=${port}`,
+    `${BASE_URL}/optic?alias=${alias}&device=${encodeURIComponent(device)}&rSlot=${rSlot}&port=${port}`,
     {
       method  : "DELETE",
       headers : { "x-user-alias": alias },
