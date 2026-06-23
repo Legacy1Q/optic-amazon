@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useBridge } from '../hooks/useBridge';
@@ -6,8 +5,6 @@ import type { PortData, PortStatus, SlotData } from '../types/index';
 import { loadSavedOptics, saveOptic, deleteOptic } from '../api/opticsApi';
 import BrickHandoffPanel from '../components/BrickHandoffPanel';
 import '../styles/BrickTracking.css';
-
-// branch testing
 
 // ── Local-only types ──────────────────────────────────────
 interface SavedPort {
@@ -76,40 +73,20 @@ const BrickTracking: React.FC = () => {
   const [savedOptics, setSavedOptics]       = useState<SavedOptics>({});
   const [showHandoff, setShowHandoff]       = useState(false);
 
-  const abortRef = useRef<AbortController | null>(null);
+  const abortRef        = useRef<AbortController | null>(null);
+  const currentBrickRef = useRef<string>('');
 
-  // ── Load saved optics from API on brick search ────────────
+  // ── Keep ref in sync with state ───────────────────────────
   useEffect(() => {
-    if (!user?.alias || !currentBrick) return;
-
-    const fetchSaved = async () => {
-      try {
-        const data = await loadSavedOptics(user.alias, currentBrick);
-        const normalized: SavedOptics = {};
-        if (Array.isArray(data)) {
-          data.forEach((item: any) => {
-            if (!normalized[item.rSlot]) normalized[item.rSlot] = {};
-            normalized[item.rSlot][String(item.port)] = {
-              serial   : item.serial ?? null,
-              installer: item.alias,
-              at       : item.at,
-            };
-          });
-        } else {
-          Object.assign(normalized, data);
-        }
-        setSavedOptics(normalized);
-      } catch (err) {
-        console.error('Failed to load saved optics:', err);
-      }
-    };
-
-    fetchSaved();
-  }, [user?.alias, currentBrick]);
+    currentBrickRef.current = currentBrick;
+  }, [currentBrick]);
 
   // ── Save a port locally + persist to API ─────────────────
   const savePort = useCallback(async (rSlot: string, port: string) => {
     if (!user) return;
+    const brick = currentBrickRef.current;
+    if (!brick) return;
+
     const now = new Date().toISOString();
 
     setSavedOptics(prev => ({
@@ -121,15 +98,17 @@ const BrickTracking: React.FC = () => {
     }));
 
     try {
-      await saveOptic(user.alias, currentBrick, rSlot, Number(port), null);
+      await saveOptic(user.alias, brick, rSlot, Number(port), null);
     } catch (err) {
       console.error('Failed to save optic (local state preserved):', err);
     }
-  }, [user, currentBrick]);
+  }, [user]); // removed currentBrick — now uses ref
 
   // ── Remove a saved port locally + delete from API ─────────
   const removePort = useCallback(async (rSlot: string, port: string) => {
     if (!user) return;
+    const brick = currentBrickRef.current;
+    if (!brick) return;
 
     setSavedOptics(prev => {
       const updated = { ...prev };
@@ -146,11 +125,11 @@ const BrickTracking: React.FC = () => {
     });
 
     try {
-      await deleteOptic(user.alias, currentBrick, rSlot, Number(port));
+      await deleteOptic(user.alias, brick, rSlot, Number(port));
     } catch (err) {
       console.error('Failed to delete optic:', err);
     }
-  }, [user, currentBrick]);
+  }, [user]); // removed currentBrick — now uses ref
 
   // ── Open handoff panel ────────────────────────────────────
   const handleBrickLabelClick = useCallback(() => {
@@ -165,17 +144,20 @@ const BrickTracking: React.FC = () => {
 
     const brickPattern = /^([a-z]+\d+)-(\d+)-([a-z]+)-([a-z0-9]+)-([a-z0-9]+)$/i;
     if (!brickPattern.test(deviceName)) {
-      setStatusText('⚠ Invalid brick format. Example: [MAC_ADDRESS]');
+      setStatusText('⚠ Invalid brick format. Example: iad7-109-es-e1-b48');
       return;
     }
 
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
 
+    const normalizedBrick = deviceName.toUpperCase();
+
     setIsLoading(true);
     setSavedOptics({});
     setShowHandoff(false);
-    setCurrentBrick(deviceName.toUpperCase());
+    setCurrentBrick(normalizedBrick);
+    currentBrickRef.current = normalizedBrick; // sync ref immediately — don't wait for state
     setStatusText('Fetching optic data...');
 
     setRowResults(
@@ -190,22 +172,51 @@ const BrickTracking: React.FC = () => {
       }))
     );
 
-    try {
-      const results = await new Promise<SlotData[]>((resolve, reject) => {
+    // ── Run both fetches in parallel, capture BOTH results ──
+    const [brickResult, opticsResult] = await Promise.allSettled([
+      new Promise<SlotData[]>((resolve, reject) => {
         requestBrickData(
           deviceName,
-          (data) => resolve(data),
+          (data)  => resolve(data),
           (error) => reject(new Error(error))
         );
-      });
+      }),
+      (async (): Promise<SavedOptics> => {
+        if (!user?.alias) return {};
+        const saved = await loadSavedOptics(user.alias, normalizedBrick);
+        const normalized: SavedOptics = {};
+        if (Array.isArray(saved)) {
+          saved.forEach((item: any) => {
+            if (!normalized[item.rSlot]) normalized[item.rSlot] = {};
+            normalized[item.rSlot][String(item.port)] = {
+              serial   : item.serial ?? null,
+              installer: item.alias,
+              at       : item.at,
+            };
+          });
+        } else {
+          Object.assign(normalized, saved);
+        }
+        return normalized;
+      })(),
+    ]);
 
-      if (abortRef.current?.signal.aborted) return;
+    if (abortRef.current?.signal.aborted) return;
 
-      setRowResults(results);
+    // ── Apply saved optics regardless of brick result ────────
+    if (opticsResult.status === 'fulfilled') {
+      setSavedOptics(opticsResult.value);
+    } else {
+      console.error('Failed to load saved optics:', opticsResult.reason);
+    }
+
+    // ── Apply brick data ──────────────────────────────────────
+    if (brickResult.status === 'fulfilled') {
+      setRowResults(brickResult.value);
 
       let found = 0;
-      const total = results.length * 16;
-      results.forEach(row => {
+      const total = brickResult.value.length * 16;
+      brickResult.value.forEach(row => {
         row.ports.forEach(p => {
           if (
             p.status === 'deployed'     ||
@@ -216,13 +227,14 @@ const BrickTracking: React.FC = () => {
       });
 
       setStatusText(`${found} / ${total} ports have optics`);
-    } catch (err) {
-      if ((err as Error).message?.includes('aborted')) return;
-      setStatusText('⚠ Failed to fetch brick data. Is the Tampermonkey bridge running?');
-    } finally {
-      setIsLoading(false);
+    } else {
+      if (!(brickResult.reason as Error).message?.includes('aborted')) {
+        setStatusText('⚠ Failed to fetch brick data. Is the Tampermonkey bridge running?');
+      }
     }
-  }, [searchValue, requestBrickData]);
+
+    setIsLoading(false);
+  }, [searchValue, requestBrickData, user]);
 
   // ── Port click handlers ───────────────────────────────────
   const handlePortClick = useCallback((
@@ -230,7 +242,7 @@ const BrickTracking: React.FC = () => {
     rSlot    : string,
     savedPort: SavedPort | undefined
   ) => {
-    if (!currentBrick) return;
+    if (!currentBrickRef.current) return;
 
     if (port.serialNumber && (
       port.status === 'deployed'     ||
@@ -247,7 +259,7 @@ const BrickTracking: React.FC = () => {
     if (nonActionable.includes(port.status)) return;
 
     savePort(rSlot, port.port);
-  }, [currentBrick, savePort]);
+  }, [savePort]); // removed currentBrick — now uses ref
 
   const handlePortContextMenu = useCallback((
     e        : React.MouseEvent,
@@ -256,9 +268,9 @@ const BrickTracking: React.FC = () => {
     savedPort: SavedPort | undefined
   ) => {
     e.preventDefault();
-    if (!currentBrick || !savedPort) return;
+    if (!currentBrickRef.current || !savedPort) return;
     removePort(rSlot, port.port);
-  }, [currentBrick, removePort]);
+  }, [removePort]); // removed currentBrick — now uses ref
 
   // ── Render a single column of r-slots ────────────────────
   const renderColumn = (slots: string[], label: string) => (
@@ -355,7 +367,7 @@ const BrickTracking: React.FC = () => {
           <input
             className="bt-search-input"
             type="text"
-            placeholder="Enter brick name — e.g. [MAC_ADDRESS]"
+            placeholder="Enter brick name — e.g. iad7-109-es-e1-b48"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSearch()}
@@ -407,4 +419,3 @@ const BrickTracking: React.FC = () => {
 };
 
 export default BrickTracking;
-

@@ -7,7 +7,8 @@
   "headers": [],
   "content-security-policy": {
     "connect-src": [
-      "uyvnsp8nok.execute-api.us-east-1.amazonaws.com",
+      "fztb35yec5.execute-api.us-east-1.amazonaws.com",
+      "https://fztb35yec5.execute-api.us-east-1.amazonaws.com",
       "nsm-iad.amazon.com",
       "nsm-ale-external.aka.corp.amazon.com",
       "nsm-apa-external.cmh.aws-border.com",
