@@ -72,6 +72,14 @@ function fmtDate(iso: string): string {
   catch { return iso; }
 }
 
+/** Parse a raw string into individual serial numbers (handles newlines, commas, tabs, spaces) */
+function parseSerials(raw: string): string[] {
+  return raw
+    .split(/[\n\r,\t]+/)           // split on newlines, commas, tabs
+    .map(s => s.trim().toUpperCase())
+    .filter(s => s.length > 0);
+}
+
 function exportCSV(records: DeploymentRecord[]): void {
   const headers = [
     'Serial', 'Site', 'Data Hall', 'Device', 'Deployed By',
@@ -94,7 +102,6 @@ function exportCSV(records: DeploymentRecord[]): void {
 
 // ─── Empty form state ─────────────────────────────────────────────────────────
 const EMPTY_FORM = {
-  serial    : '',
   site      : '',
   dataHall  : '',
   device    : '',
@@ -110,7 +117,12 @@ const EMPTY_FORM = {
 const DeploymentTracking: React.FC = () => {
   const [records,    setRecords]    = useState<DeploymentRecord[]>(loadRecords);
   const [form,       setForm]       = useState({ ...EMPTY_FORM });
+  const [serials,    setSerials]    = useState<string[]>([]);
+  const [serialInput, setSerialInput] = useState('');
+  const [bulkMode,   setBulkMode]   = useState(false);        // toggle between scan & bulk paste
+  const [bulkText,   setBulkText]   = useState('');            // textarea content for bulk paste
   const [editId,     setEditId]     = useState<string | null>(null);
+  const [editSerial, setEditSerial] = useState('');
   const [formError,  setFormError]  = useState<string>('');
   const [formMsg,    setFormMsg]    = useState<string>('');
   const [search,     setSearch]     = useState('');
@@ -120,6 +132,7 @@ const DeploymentTracking: React.FC = () => {
   const [sortDir,    setSortDir]    = useState<SortDir>('desc');
   const [showForm,   setShowForm]   = useState(false);
   const serialRef = useRef<HTMLInputElement>(null);
+  const bulkRef   = useRef<HTMLTextAreaElement>(null);
 
   // Persist on change
   useEffect(() => { saveRecords(records); }, [records]);
@@ -133,10 +146,86 @@ const DeploymentTracking: React.FC = () => {
     }
   }, [showForm, editId]);
 
-  // Focus serial input when form opens
+  // Focus appropriate input when form opens or mode changes
   useEffect(() => {
-    if (showForm) setTimeout(() => serialRef.current?.focus(), 80);
-  }, [showForm]);
+    if (showForm && !editId) {
+      setTimeout(() => {
+        if (bulkMode) bulkRef.current?.focus();
+        else serialRef.current?.focus();
+      }, 80);
+    }
+  }, [showForm, editId, bulkMode]);
+
+  // ─── Serial list handlers ───────────────────────────────────────────────
+  const addSerialsToList = useCallback((newSerials: string[]) => {
+    setSerials(prev => {
+      const existing = new Set(prev);
+      const unique = newSerials.filter(s => !existing.has(s));
+      return [...prev, ...unique];
+    });
+  }, []);
+
+  const handleAddSerial = useCallback(() => {
+    const trimmed = serialInput.trim().toUpperCase();
+    if (!trimmed) return;
+    if (serials.includes(trimmed)) {
+      setFormError(`Serial "${trimmed}" is already in the list.`);
+      return;
+    }
+    setSerials(prev => [...prev, trimmed]);
+    setSerialInput('');
+    setFormError('');
+    serialRef.current?.focus();
+  }, [serialInput, serials]);
+
+  const handleSerialKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddSerial();
+      }
+    },
+    [handleAddSerial]
+  );
+
+  /** Handle paste into the single-line input (scanner or manual paste) */
+  const handleSerialPaste = useCallback(
+    (e: React.ClipboardEvent<HTMLInputElement>) => {
+      const pasted = e.clipboardData.getData('text');
+      // If pasted text contains multiple lines/commas, treat as bulk
+      if (/[\n\r,\t]/.test(pasted)) {
+        e.preventDefault();
+        const parsed = parseSerials(pasted);
+        if (parsed.length > 0) {
+          addSerialsToList(parsed);
+          setSerialInput('');
+          setFormError('');
+        }
+      }
+      // Otherwise let normal paste happen (single serial)
+    },
+    [addSerialsToList]
+  );
+
+  /** Add all serials from the bulk textarea */
+  const handleBulkAdd = useCallback(() => {
+    const parsed = parseSerials(bulkText);
+    if (parsed.length === 0) {
+      setFormError('No valid serials found. Enter one serial per line.');
+      return;
+    }
+    addSerialsToList(parsed);
+    setBulkText('');
+    setFormError('');
+  }, [bulkText, addSerialsToList]);
+
+  const handleRemoveSerial = useCallback((serial: string) => {
+    setSerials(prev => prev.filter(s => s !== serial));
+  }, []);
+
+  const handleClearAllSerials = useCallback(() => {
+    setSerials([]);
+  }, []);
 
   // ─── Form handlers ──────────────────────────────────────────────────────
   const handleChange = useCallback(
@@ -151,28 +240,36 @@ const DeploymentTracking: React.FC = () => {
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      const { serial, site, device, deployedBy, deployedAt } = form;
-
-      if (!serial.trim())     { setFormError('Serial number is required.'); return; }
-      if (!site.trim())       { setFormError('Site is required.'); return; }
-      if (!device.trim())     { setFormError('Device / Brick is required.'); return; }
-      if (!deployedBy.trim()) { setFormError('Deployed By alias is required.'); return; }
-      if (!deployedAt)        { setFormError('Deployed At date/time is required.'); return; }
+      const { site, device, deployedBy, deployedAt } = form;
 
       if (editId) {
+        if (!editSerial.trim())   { setFormError('Serial number is required.'); return; }
+        if (!site.trim())         { setFormError('Site is required.'); return; }
+        if (!device.trim())       { setFormError('Device / Brick is required.'); return; }
+        if (!deployedBy.trim())   { setFormError('Deployed By alias is required.'); return; }
+        if (!deployedAt)          { setFormError('Deployed At date/time is required.'); return; }
+
         setRecords(prev =>
           prev.map(r =>
             r.id === editId
-              ? { ...r, ...form, deployedAt: new Date(form.deployedAt).toISOString() }
+              ? { ...r, ...form, serial: editSerial.trim().toUpperCase(), deployedAt: new Date(form.deployedAt).toISOString() }
               : r
           )
         );
         setFormMsg('✅ Record updated.');
         setEditId(null);
+        setEditSerial('');
       } else {
-        const newRecord: DeploymentRecord = {
+        if (serials.length === 0) { setFormError('Add at least one serial number.'); return; }
+        if (!site.trim())         { setFormError('Site is required.'); return; }
+        if (!device.trim())       { setFormError('Device / Brick is required.'); return; }
+        if (!deployedBy.trim())   { setFormError('Deployed By alias is required.'); return; }
+        if (!deployedAt)          { setFormError('Deployed At date/time is required.'); return; }
+
+        // Create one deployment record PER serial
+        const newRecords: DeploymentRecord[] = serials.map(serial => ({
           id        : genId(),
-          serial    : serial.trim().toUpperCase(),
+          serial    : serial,
           site      : site.trim().toUpperCase(),
           dataHall  : form.dataHall.trim().toUpperCase(),
           device    : form.device.trim(),
@@ -184,23 +281,26 @@ const DeploymentTracking: React.FC = () => {
           note      : form.note.trim(),
           createdAt : nowIso(),
           status    : 'DEPLOYED',
-        };
-        setRecords(prev => [newRecord, ...prev]);
-        setFormMsg(`✅ Deployment recorded for ${newRecord.serial}.`);
+        }));
+
+        setRecords(prev => [...newRecords, ...prev]);
+        setFormMsg(`✅ ${newRecords.length} deployment${newRecords.length > 1 ? 's' : ''} recorded.`);
       }
 
       setForm({ ...EMPTY_FORM });
+      setSerials([]);
+      setSerialInput('');
+      setBulkText('');
       setShowForm(false);
       setTimeout(() => setFormMsg(''), 4000);
     },
-    [form, editId]
+    [form, editId, editSerial, serials]
   );
 
   const handleEdit = useCallback((record: DeploymentRecord) => {
     const dt = new Date(record.deployedAt);
     dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
     setForm({
-      serial    : record.serial,
       site      : record.site,
       dataHall  : record.dataHall,
       device    : record.device,
@@ -212,6 +312,11 @@ const DeploymentTracking: React.FC = () => {
       note      : record.note,
     });
     setEditId(record.id);
+    setEditSerial(record.serial);
+    setSerials([]);
+    setSerialInput('');
+    setBulkText('');
+    setBulkMode(false);
     setShowForm(true);
     setFormError('');
   }, []);
@@ -231,6 +336,11 @@ const DeploymentTracking: React.FC = () => {
   const handleCancelForm = useCallback(() => {
     setForm({ ...EMPTY_FORM });
     setEditId(null);
+    setEditSerial('');
+    setSerials([]);
+    setSerialInput('');
+    setBulkText('');
+    setBulkMode(false);
     setShowForm(false);
     setFormError('');
   }, []);
@@ -309,7 +419,7 @@ const DeploymentTracking: React.FC = () => {
         <div className="dt-header-actions">
           <button
             className="dt-btn dt-btn-primary"
-            onClick={() => { setShowForm(true); setEditId(null); setForm({ ...EMPTY_FORM }); }}
+            onClick={() => { setShowForm(true); setEditId(null); setEditSerial(''); setSerials([]); setSerialInput(''); setBulkText(''); setBulkMode(false); setForm({ ...EMPTY_FORM }); }}
           >
             ➕ New Deployment
           </button>
@@ -357,37 +467,186 @@ const DeploymentTracking: React.FC = () => {
 
             <form className="dt-form" onSubmit={handleSubmit} noValidate>
 
-              {/* Row 1 */}
-              <div className="dt-form-row">
-                <div className="dt-field">
-                  <label htmlFor="dt-serial">Serial Number *</label>
-                  <input
-                    ref={serialRef}
-                    id="dt-serial"
-                    name="serial"
-                    type="text"
-                    placeholder="e.g. IDOBH1826870"
-                    value={form.serial}
-                    onChange={handleChange}
-                    maxLength={64}
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
+              {/* ── Serial Section ── */}
+              {editId ? (
+                /* Edit mode: single serial input */
+                <div className="dt-form-row">
+                  <div className="dt-field">
+                    <label htmlFor="dt-serial">Serial Number *</label>
+                    <input
+                      ref={serialRef}
+                      id="dt-serial"
+                      type="text"
+                      placeholder="e.g. IDOBH1826870"
+                      value={editSerial}
+                      onChange={e => { setEditSerial(e.target.value); setFormError(''); }}
+                      maxLength={64}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                  </div>
+                  <div className="dt-field">
+                    <label htmlFor="dt-opticType">Optic Type</label>
+                    <select
+                      id="dt-opticType"
+                      name="opticType"
+                      value={form.opticType}
+                      onChange={handleChange}
+                    >
+                      {OPTIC_TYPES.map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="dt-field">
-                  <label htmlFor="dt-opticType">Optic Type</label>
-                  <select
-                    id="dt-opticType"
-                    name="opticType"
-                    value={form.opticType}
-                    onChange={handleChange}
-                  >
-                    {OPTIC_TYPES.map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              ) : (
+                /* New mode: scan or bulk paste */
+                <>
+                  {/* Mode toggle */}
+                  <div className="dt-mode-toggle">
+                    <button
+                      type="button"
+                      className={`dt-mode-btn ${!bulkMode ? 'active' : ''}`}
+                      onClick={() => setBulkMode(false)}
+                    >
+                      📷 Scan / Type
+                    </button>
+                    <button
+                      type="button"
+                      className={`dt-mode-btn ${bulkMode ? 'active' : ''}`}
+                      onClick={() => setBulkMode(true)}
+                    >
+                      📋 Bulk Paste
+                    </button>
+                  </div>
+
+                  {!bulkMode ? (
+                    /* Scan / Type mode — one at a time, scanner auto-adds on Enter */
+                    <div className="dt-form-row">
+                      <div className="dt-field">
+                        <label htmlFor="dt-serial">Serial * — scan or type, press Enter to add</label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <input
+                            ref={serialRef}
+                            id="dt-serial"
+                            type="text"
+                            placeholder="Scan barcode or type serial…"
+                            value={serialInput}
+                            onChange={e => { setSerialInput(e.target.value); setFormError(''); }}
+                            onKeyDown={handleSerialKeyDown}
+                            onPaste={handleSerialPaste}
+                            maxLength={64}
+                            autoComplete="off"
+                            spellCheck={false}
+                            style={{ flex: 1 }}
+                          />
+                          <button
+                            type="button"
+                            className="dt-btn dt-btn-secondary"
+                            onClick={handleAddSerial}
+                          >
+                            + Add
+                          </button>
+                        </div>
+                      </div>
+                      <div className="dt-field">
+                        <label htmlFor="dt-opticType">Optic Type</label>
+                        <select
+                          id="dt-opticType"
+                          name="opticType"
+                          value={form.opticType}
+                          onChange={handleChange}
+                        >
+                          {OPTIC_TYPES.map(t => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Bulk Paste mode — textarea for pasting many serials at once */
+                    <div className="dt-form-row">
+                      <div className="dt-field dt-field-full">
+                        <label htmlFor="dt-bulk">Paste serials * (one per line, or comma-separated)</label>
+                        <textarea
+                          ref={bulkRef}
+                          id="dt-bulk"
+                          placeholder={"IDOBH1826870\nIDOBH1826871\nIDOBH1826872\n...paste all 50 here"}
+                          value={bulkText}
+                          onChange={e => { setBulkText(e.target.value); setFormError(''); }}
+                          rows={5}
+                          spellCheck={false}
+                          style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}
+                        />
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            className="dt-btn dt-btn-secondary"
+                            onClick={handleBulkAdd}
+                          >
+                            ✚ Add All to List
+                          </button>
+                          <span style={{ fontSize: '0.8rem', color: '#888' }}>
+                            {bulkText.trim() ? `~${parseSerials(bulkText).length} serial(s) detected` : ''}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Optic type (shown in bulk mode since it's not in the row above) */}
+                  {bulkMode && (
+                    <div className="dt-form-row">
+                      <div className="dt-field">
+                        <label htmlFor="dt-opticType">Optic Type</label>
+                        <select
+                          id="dt-opticType"
+                          name="opticType"
+                          value={form.opticType}
+                          onChange={handleChange}
+                        >
+                          {OPTIC_TYPES.map(t => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Serial chips / tags */}
+                  {serials.length > 0 && (
+                    <div className="dt-serial-chips">
+                      <div className="dt-chips-header">
+                        <span className="dt-serial-count">
+                          ✅ {serials.length} serial{serials.length !== 1 ? 's' : ''} → {serials.length} deployment{serials.length !== 1 ? 's' : ''}
+                        </span>
+                        <button
+                          type="button"
+                          className="dt-btn dt-btn-ghost dt-btn-sm"
+                          onClick={handleClearAllSerials}
+                        >
+                          🗑 Clear All
+                        </button>
+                      </div>
+                      <div className="dt-chips-list">
+                        {serials.map(s => (
+                          <span key={s} className="dt-serial-chip">
+                            {s}
+                            <button
+                              type="button"
+                              className="dt-chip-remove"
+                              onClick={() => handleRemoveSerial(s)}
+                              title="Remove"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
 
               {/* Row 2 */}
               <div className="dt-form-row">
@@ -517,7 +776,7 @@ const DeploymentTracking: React.FC = () => {
                   Cancel
                 </button>
                 <button type="submit" className="dt-btn dt-btn-primary">
-                  {editId ? '💾 Save Changes' : '🚀 Record Deployment'}
+                  {editId ? '💾 Save Changes' : `🚀 Record Deployment${serials.length > 1 ? `s (${serials.length})` : ''}`}
                 </button>
               </div>
             </form>
@@ -631,3 +890,4 @@ const DeploymentTracking: React.FC = () => {
 };
 
 export default DeploymentTracking;
+
