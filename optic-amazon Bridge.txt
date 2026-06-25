@@ -1,8 +1,9 @@
+
 // ==UserScript==
 // @name         optic-amazon Bridge
 // @namespace    id-install
-// @version      2.2
-// @description  Tampermonkey bridge — fetches NSM + UNS + Bin + SIM data for optic-amazon web app
+// @version      3.0.0
+// @description  Tampermonkey bridge — fetches NSM + Bin + SIM data for optic-amazon web app
 // @author       @misimsr
 // @match        https://optic-amazon.beta.harmony.a2z.com/*
 // @match        https://optic-amazon.beta.harmony.a2z.com/brick-tracking
@@ -12,7 +13,6 @@
 // @connect      aws-border.com
 // @connect      amazon.com
 // @connect      mobility-search.amazon.com
-// @connect      uns.networking.aws.dev
 // @connect      issues.amazon.com
 // ==/UserScript==
 
@@ -30,7 +30,7 @@
 
   const UNS_BASE        = 'https://uns.networking.aws.dev';
   const SOLR_BASE       = 'https://mobility-search.amazon.com/solr/assets/select/';
-  const TICKET_KEYWORDS = ['OPTIC', 'REQUIRED', 'DR4'];   // moved up from bottom
+  const TICKET_KEYWORDS = ['OPTIC', 'REQUIRED', 'DR4'];
 
   // ── Announce on load in case React is already listening ──
   window.postMessage({ type: 'BRIDGE_READY' }, window.location.origin);
@@ -41,13 +41,11 @@
     const msg = event.data;
     if (!msg || !msg.type) return;
 
-    // ── Ping ──────────────────────────────────────────────
     if (msg.type === 'BRIDGE_PING') {
       window.postMessage({ type: 'BRIDGE_READY' }, window.location.origin);
       return;
     }
 
-    // ── NSM optic request ─────────────────────────────────
     if (msg.type === 'NSM_REQUEST') {
       const { requestId, payload } = msg;
       const { deviceName } = payload;
@@ -66,14 +64,25 @@
       return;
     }
 
-    // ── UNS handoff request ───────────────────────────────
     if (msg.type === 'UNS_REQUEST') {
       const { requestId, payload } = msg;
       const { deviceName } = payload;
+      // No API call — just return the link immediately
+      const data = buildHandoffResponse(deviceName);
+      window.postMessage(
+        { type: 'UNS_RESPONSE', requestId, payload: data },
+        window.location.origin
+      );
+      return;
+    }
+
+    if (msg.type === 'TICKET_REQUEST') {
+      const { requestId, payload } = msg;
+      const { groupName } = payload;
       try {
-        const data = await fetchUNSHandoffData(deviceName);
+        const tickets = await fetchSIMTickets(groupName);
         window.postMessage(
-          { type: 'UNS_RESPONSE', requestId, payload: data },
+          { type: 'TICKET_RESPONSE', requestId, payload: tickets },
           window.location.origin
         );
       } catch (err) {
@@ -85,27 +94,6 @@
       return;
     }
 
-      // ── SIM Ticket request ────────────────────────────────
-      if (msg.type === 'TICKET_REQUEST') {
-          const { requestId, payload } = msg;
-          const { groupName } = payload;
-          try {
-              const tickets = await fetchSIMTickets(groupName);
-              window.postMessage(
-                  { type: 'TICKET_RESPONSE', requestId, payload: tickets },
-                  window.location.origin
-              );
-          } catch (err) {
-              window.postMessage(
-                  { type: 'BRIDGE_ERROR', requestId, payload: String(err) },
-                  window.location.origin
-              );
-          }
-          return;
-      }
-
-
-    // ── BIN request (NEW) ─────────────────────────────────
     if (msg.type === 'BIN_REQUEST') {
       const { requestId, payload } = msg;
       const { site, room, bin } = payload;
@@ -126,24 +114,18 @@
   });
 
   // ════════════════════════════════════════════════════════
-  //  BIN helpers (NEW)
+  //  BIN helpers
   // ════════════════════════════════════════════════════════
 
-  /**
-   * Fetches bin parts from Mobility Solr.
-   * First gets the total count, then fetches all docs for speed breakdown.
-   */
   async function fetchBinParts(site, room, bin) {
     const query = `site:${site} AND room:${room} AND bin:${bin}`;
 
-    // Step 1: Get total count
     const countParams = new URLSearchParams({
-        q: query, wt: 'json', rows: '0',
+      q: query, wt: 'json', rows: '0',
     });
     const countResp = await fetchJSON(`${SOLR_BASE}?${countParams}`);
     const numFound  = countResp?.response?.numFound ?? 0;
 
-    // Step 2: Fetch docs for speed classification (up to 50000)
     const docsParams = new URLSearchParams({
       q: query, wt: 'json', rows: '50000', fl: 'model_description',
     });
@@ -159,21 +141,8 @@
   }
 
   // ════════════════════════════════════════════════════════
-  //  NSM helpers
+  //  Generic fetch helpers
   // ════════════════════════════════════════════════════════
-
-  function getRegion(cluster) {
-    return cluster.match(/^[a-z]+/i)?.[0]?.toLowerCase();
-  }
-
-  function parseBrickName(deviceName) {
-    const match = deviceName.match(
-      /^([a-z]+\d+)-(\d+)-([a-z]+)-([a-z0-9]+)-([a-z0-9]+)$/i
-    );
-    if (!match) return null;
-    const [, cluster, site, fabric, roleId, brick] = match;
-    return { cluster, site, fabric, roleId, brick };
-  }
 
   function fetchPage(url) {
     return new Promise((resolve, reject) => {
@@ -210,6 +179,23 @@
         ontimeout: () => reject(new Error('Timeout')),
       });
     });
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  NSM helpers
+  // ════════════════════════════════════════════════════════
+
+  function getRegion(cluster) {
+    return cluster.match(/^[a-z]+/i)?.[0]?.toLowerCase();
+  }
+
+  function parseBrickName(deviceName) {
+    const match = deviceName.match(
+      /^([a-z]+\d+)-(\d+)-([a-z]+)-([a-z0-9]+)-([a-z0-9]+)$/i
+    );
+    if (!match) return null;
+    const [, cluster, site, fabric, roleId, brick] = match;
+    return { cluster, site, fabric, roleId, brick };
   }
 
   function parsePortsFromHTML(html) {
@@ -318,133 +304,78 @@
   }
 
   // ════════════════════════════════════════════════════════
-  //  UNS helpers
+  //  UNS Handoff — Link Only (no API fetch)
   // ════════════════════════════════════════════════════════
 
+  /**
+   * Build the UNS browser URL for a brick.
+   * This is the same URL format the UNS frontend uses.
+   */
   function buildUNSUrl(deviceName) {
-    const shortname = encodeURIComponent(`[${deviceName.toLowerCase()}][onefabric_12_8t_16w_agg_brick]`);
-    return `${UNS_BASE}/api/workflows?workflow=AggBrickScalingWorkflow&operation=and&shortname=%3D${shortname}`;
+    const deviceLower = deviceName.toLowerCase();
+    const shortname = encodeURIComponent(
+      `=[${deviceLower}][onefabric_12_8t_16w_agg_brick]`
+    );
+    return (
+      `${UNS_BASE}/#/workflows` +
+      `?workflow=AggBrickScalingWorkflow` +
+      `&operation=and` +
+      `&dryRun=%3Dfalse` +
+      `&status=%21%3DTERMINATED` +
+      `&shortname=${shortname}`
+    );
   }
 
-  async function fetchUNSHandoffData(deviceName) {
-    const apiUrl  = buildUNSUrl(deviceName);
-    const json    = await fetchJSON(apiUrl);
-
-    const workflows = Array.isArray(json) ? json : (json.workflows ?? []);
-
-    if (!workflows.length) {
-      return {
-        workflowStatus : 'NOT_FOUND',
-        projectedDate  : null,
-        timelineSteps  : [],
-        workflowSteps  : [],
-        workflowUrl    : buildUNSBrowserUrl(deviceName),
-      };
-    }
-
-    const wf = workflows[0];
-
-    const workflowStatus = wf.status ?? wf.workflowStatus ?? 'UNKNOWN';
-
-    const projectedDate =
-      wf.projectedDate   ??
-      wf.targetDate      ??
-      wf.metadata?.projectedDate ??
-      wf.metadata?.targetDate    ??
-      null;
-
-    const TIMELINE_NAMES = [
-      'Preparation',
-      'Physical Build',
-      'Provisioning',
-      'Physical Validation',
-      'Go Live',
-      'Clean Up',
-    ];
-
-    const rawTimeline = wf.timeline ?? wf.timelineSteps ?? wf.phases ?? [];
-    const timelineSteps = TIMELINE_NAMES.map((name) => {
-      const found = rawTimeline.find(
-        (s) => (s.name ?? s.phase ?? '').toLowerCase() === name.toLowerCase()
-      );
-      return {
-        name,
-        status : found?.status ?? 'PENDING',
-        pct    : typeof found?.percentage === 'number'
-                   ? found.percentage
-                   : typeof found?.progress === 'number'
-                     ? found.progress
-                     : 0,
-      };
-    });
-
-    const rawSteps    = wf.steps ?? wf.workflowSteps ?? [];
-    const workflowSteps = rawSteps.map((s) => ({
-      name  : s.name   ?? s.stepName ?? 'Unknown',
-      status: s.status ?? 'UNKNOWN',
-    }));
-
+  /**
+   * Build handoff response — instant, no network call.
+   * Returns the UNS link for the React app to display.
+   */
+  function buildHandoffResponse(deviceName) {
     return {
-      workflowStatus,
-      projectedDate,
-      timelineSteps,
-      workflowSteps,
-      workflowUrl: buildUNSBrowserUrl(deviceName),
+      workflowStatus : null,
+      projectedDate  : null,
+      timelineSteps  : null,
+      workflowSteps  : null,
+      workflowUrl    : buildUNSUrl(deviceName),
+      source         : 'LINK_ONLY',
     };
   }
 
-  function buildUNSBrowserUrl(deviceName) {
-    const shortname = encodeURIComponent(`=[${deviceName.toLowerCase()}][onefabric_12_8t_16w_agg_brick]`);
-    return `${UNS_BASE}/#/workflows?workflow=AggBrickScalingWorkflow&operation=and&shortname=${shortname}`;
+  // ════════════════════════════════════════════════════════
+  //  SIM Ticket helpers
+  // ════════════════════════════════════════════════════════
+
+  async function fetchSIMTickets(groupName) {
+    const params = new URLSearchParams({
+      assignedGroup : groupName,
+      status        : 'not_resolved',
+      maxResults    : '200',
+      fields        : 'id,title,status,assignee,assignedGroup,createdDate,updatedDate,severity',
+    });
+
+    const url  = `https://issues.amazon.com/api/issues/search?${params}`;
+    const json = await fetchJSON(url);
+
+    const issues = Array.isArray(json) ? json : (json.issues ?? json.results ?? []);
+
+    return issues
+      .filter(issue => {
+        const title = (issue.title ?? issue.summary ?? '').toUpperCase();
+        return TICKET_KEYWORDS.some(kw => title.includes(kw));
+      })
+      .map(issue => ({
+        id           : issue.id           ?? issue.issueId   ?? '',
+        title        : issue.title        ?? issue.summary   ?? '',
+        status       : issue.status       ?? 'Unknown',
+        assignee     : issue.assignee     ?? issue.owner     ?? '',
+        assignedGroup: issue.assignedGroup ?? groupName,
+        createdAt    : issue.createdDate  ?? issue.created   ?? '',
+        updatedAt    : issue.updatedDate  ?? issue.updated   ?? '',
+        severity     : issue.severity     ?? '',
+        url          : `https://t.corp.amazon.com/${issue.id ?? issue.issueId}`,
+        categories   : [],
+      }));
   }
 
-    // ════════════════════════════════════════════════════════
-    //  SIM Ticket helpers
-    // ════════════════════════════════════════════════════════
-
-    const TICKET_KEYWORDS = ['OPTIC', 'REQUIRED', 'DR4'];
-
-    /**
-    * Fetches open tickets for a given SIM assigned group and filters
-    * by TICKET_KEYWORDS in the title.
-    *
-    * SIM search API endpoint (internal):
-    *   https://issues.amazon.com/api/issues/search
-    *
-    * We query by assignedGroup and filter client-side by keyword.
-    */
-    async function fetchSIMTickets(groupName) {
-        const params = new URLSearchParams({
-            assignedGroup : groupName,
-            status        : 'not_resolved',   // open tickets
-            maxResults    : '200',
-            fields        : 'id,title,status,assignee,assignedGroup,createdDate,updatedDate,severity',
-        });
-
-        const url  = `https://issues.amazon.com/api/issues/search?${params}`;
-        const json = await fetchJSON(url);
-
-        // SIM returns { issues: [...] } or an array
-        const issues = Array.isArray(json) ? json : (json.issues ?? json.results ?? []);
-
-        return issues
-            .filter(issue => {
-            const title = (issue.title ?? issue.summary ?? '').toUpperCase();
-            return TICKET_KEYWORDS.some(kw => title.includes(kw));
-        })
-            .map(issue => ({
-            id           : issue.id           ?? issue.issueId   ?? '',
-            title        : issue.title        ?? issue.summary   ?? '',
-            status       : issue.status       ?? 'Unknown',
-            assignee     : issue.assignee     ?? issue.owner     ?? '',
-            assignedGroup: issue.assignedGroup ?? groupName,
-            createdAt    : issue.createdDate  ?? issue.created   ?? '',
-            updatedAt    : issue.updatedDate  ?? issue.updated   ?? '',
-            severity     : issue.severity     ?? '',
-            url          : `https://t.corp.amazon.com/${issue.id ?? issue.issueId}`,
-            categories   : [],   // React side fills this in
-        }));
-    }
-
-
 })();
+
