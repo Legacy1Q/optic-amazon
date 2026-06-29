@@ -1,658 +1,474 @@
-// src/components/TicketTracking.tsx
+import { useState, useEffect } from 'react';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import '../styles/TicketTracking.css';
+// ════════════════════════════════════════════════════════
+//  Types
+// ════════════════════════════════════════════════════════
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type TicketStatus =
-  | 'Assigned'
-  | 'Researching'
-  | 'Work In Progress'
-  | 'Pending'
-  | 'Resolved'
-  | string;
-
-type TicketCategory = 'optic' | 'required' | 'dr4' | 'state' | 'change' |'other';
-
-interface Ticket {
-  id         : string;
-  title      : string;
-  status     : TicketStatus;
-  assignee   : string;
-  assignedGroup: string;
-  createdAt  : string;
-  updatedAt  : string;
-  severity   : string;
-  url        : string;
-  categories : TicketCategory[];
+interface TrackedTicket {
+  id: string;
+  title: string;
+  status: string;
+  severity: string;
+  url: string;
+  addedAt: string;
+  lastUpdated: string;
 }
 
-interface GroupConfig {
-  groupName : string;
-  savedAt   : string;
+// ════════════════════════════════════════════════════════
+//  Helpers
+// ════════════════════════════════════════════════════════
+
+const STATUS_OPTIONS = ['Assigned', 'Work In Progress', 'Researching', 'Pending', 'Resolved'];
+const SEVERITY_OPTIONS = ['1', '2', '3', '4', '5'];
+
+function getStatusColor(status: string): string {
+  const s = status.toLowerCase().replace(/\s+/g, '');
+  if (s === 'resolved') return '#4caf50';
+  if (s === 'assigned') return '#2196f3';
+  if (s === 'workinprogress') return '#ff9800';
+  if (s === 'researching') return '#9c27b0';
+  if (s === 'pending') return '#f44336';
+  return '#888';
 }
 
-// ─── Bridge Hook ──────────────────────────────────────────────────────────────
-
-function useTicketBridge() {
-  const [bridgeReady, setBridgeReady] = useState(false);
-  const pendingRef = useRef<Map<string, { resolve: Function; reject: Function }>>(new Map());
-
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
-      const msg = event.data;
-      if (!msg || !msg.type) return;
-
-      if (msg.type === 'BRIDGE_READY') {
-        setBridgeReady(true);
-        return;
-      }
-
-      if (msg.type === 'TICKET_RESPONSE') {
-        const pending = pendingRef.current.get(msg.requestId);
-        if (pending) {
-          pending.resolve(msg.payload);
-          pendingRef.current.delete(msg.requestId);
-        }
-        return;
-      }
-
-      if (msg.type === 'BRIDGE_ERROR') {
-        const pending = pendingRef.current.get(msg.requestId);
-        if (pending) {
-          pending.reject(new Error(msg.payload));
-          pendingRef.current.delete(msg.requestId);
-        }
-        return;
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    window.postMessage({ type: 'BRIDGE_PING' }, window.location.origin);
-
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
-
-  const fetchTickets = useCallback(
-    (groupName: string): Promise<Ticket[]> => {
-      return new Promise((resolve, reject) => {
-        const requestId = `ticket_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-
-        pendingRef.current.set(requestId, { resolve, reject });
-
-        window.postMessage(
-          {
-            type     : 'TICKET_REQUEST',
-            requestId,
-            payload  : { groupName },
-          },
-          window.location.origin
-        );
-
-        setTimeout(() => {
-          if (pendingRef.current.has(requestId)) {
-            pendingRef.current.delete(requestId);
-            reject(new Error('Bridge request timed out'));
-          }
-        }, 20000);
-      });
-    },
-    []
-  );
-
-  return { bridgeReady, fetchTickets };
+function getSeverityColor(severity: string): string {
+  const num = parseInt(severity, 10);
+  if (num <= 2) return '#f44336';
+  if (num === 3) return '#ff9800';
+  if (num === 4) return '#ffc107';
+  return '#4caf50';
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const TRACK_KEYWORDS = ['OPTIC', 'REQUIRED', 'DR4'] as const;
-
-function categorizeTicket(title: string): TicketCategory[] {
-  const upper = title.toUpperCase();
-  const cats: TicketCategory[] = [];
-  if (upper.includes('OPTIC'))    cats.push('optic');
-  if (upper.includes('REQUIRED')) cats.push('required');
-  if (upper.includes('DR4'))      cats.push('dr4');
-  if (cats.length === 0)          cats.push('other');
-  return cats;
-}
-
-function isTrackedTicket(title: string): boolean {
-  const upper = title.toUpperCase();
-  return TRACK_KEYWORDS.some(kw => upper.includes(kw));
-}
-
-function getStatusColor(status: TicketStatus): string {
-  const s = status.toLowerCase();
-  if (s.includes('resolved'))         return 'status-resolved';
-  if (s.includes('work in progress')) return 'status-wip';
-  if (s.includes('pending'))          return 'status-pending';
-  if (s.includes('researching'))      return 'status-researching';
-  if (s.includes('assigned'))         return 'status-assigned';
-  return 'status-default';
-}
-
-function getCategoryBadgeClass(cat: TicketCategory): string {
-  const map: Record<TicketCategory, string> = {
-    optic   : 'badge-optic',
-    required: 'badge-required',
-    dr4     : 'badge-dr4',
-    state   : 'badge-state',
-    change  : 'badge-change',
-    other   : 'badge-other',
-  };
-  return map[cat];
-}
-
-function formatDate(iso: string): string {
-  if (!iso) return '—';
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '—';
   try {
-    return new Date(iso).toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric',
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
     });
   } catch {
-    return iso;
+    return dateStr;
   }
 }
 
-function getSimTicketUrl(id: string): string {
-  return `https://t.corp.amazon.com/${id}`;
-}
+// ════════════════════════════════════════════════════════
+//  Component
+// ════════════════════════════════════════════════════════
 
-// ─── Subcomponents ────────────────────────────────────────────────────────────
-
-interface TicketCardProps {
-  ticket: Ticket;
-}
-
-const TicketCard: React.FC<TicketCardProps> = ({ ticket }) => (
-  <a
-    href={ticket.url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="tt-ticket-card"
-  >
-    {/* Top row: ID + status */}
-    <div className="tt-card-top">
-      <span className="tt-ticket-id">{ticket.id}</span>
-      <span className={`tt-status-badge ${getStatusColor(ticket.status)}`}>
-        {ticket.status}
-      </span>
-    </div>
-
-    {/* Title */}
-    <div className="tt-ticket-title">{ticket.title}</div>
-
-    {/* Category badges */}
-    <div className="tt-badge-row">
-      {ticket.categories.map(cat => (
-        <span key={cat} className={`tt-category-badge ${getCategoryBadgeClass(cat)}`}>
-          {cat.toUpperCase()}
-        </span>
-      ))}
-    </div>
-
-    {/* Meta row */}
-    <div className="tt-card-meta">
-      <span className="tt-meta-item">
-        <span className="tt-meta-label">Assignee</span>
-        <span className="tt-meta-value">{ticket.assignee || '—'}</span>
-      </span>
-      <span className="tt-meta-item">
-        <span className="tt-meta-label">Updated</span>
-        <span className="tt-meta-value">{formatDate(ticket.updatedAt)}</span>
-      </span>
-      <span className="tt-meta-item">
-        <span className="tt-meta-label">Created</span>
-        <span className="tt-meta-value">{formatDate(ticket.createdAt)}</span>
-      </span>
-    </div>
-  </a>
-);
-
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-type FilterKey = 'ALL' | 'OPTIC' | 'REQUIRED' | 'DR4' | 'STATE' | 'CHANGE' | 'OPEN' | 'RESOLVED';
-
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: 'ALL',      label: 'All'       },
-  { key: 'OPTIC',    label: 'Optic'     },
-  { key: 'REQUIRED', label: 'Required'  },
-  { key: 'DR4',      label: 'DR4'       },
-  { key: 'STATE',    label: 'State'     },
-  { key: 'CHANGE',   label: 'Change'    },
-  { key: 'OPEN',     label: 'Open'      },
-  { key: 'RESOLVED', label: 'Resolved'  },
-];
-
-const TicketTracking: React.FC = () => {
-  const { bridgeReady, fetchTickets }     = useTicketBridge();
-
-  // ── Persisted group config ──────────────────────────────────────────────────
-  const [groupName, setGroupName] = useState<string>(() => {
-    try {
-      const stored = localStorage.getItem('tt_group_config');
-      if (stored) {
-        const cfg: GroupConfig = JSON.parse(stored);
-        return cfg.groupName;
-      }
-    } catch { /* ignore */ }
-    return '';
+export default function TicketTracking() {
+  const [tickets, setTickets] = useState<TrackedTicket[]>(() => {
+    const saved = localStorage.getItem('optic-tracked-tickets');
+    return saved ? JSON.parse(saved) : [];
   });
 
-  const [groupInput,   setGroupInput]   = useState(groupName);
-  const [editingGroup, setEditingGroup] = useState(!groupName);
+  // Add ticket form state
+  const [inputId, setInputId] = useState('');
+  const [inputTitle, setInputTitle] = useState('');
+  const [inputStatus, setInputStatus] = useState('Assigned');
+  const [inputSeverity, setInputSeverity] = useState('3');
+  const [showForm, setShowForm] = useState(false);
 
-  // ── Ticket state ────────────────────────────────────────────────────────────
-  const [tickets,     setTickets]     = useState<Ticket[]>([]);
-  const [loading,     setLoading]     = useState(false);
-  const [error,       setError]       = useState<string | null>(null);
-  const [lastFetched, setLastFetched] = useState<string | null>(null);
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editStatus, setEditStatus] = useState('');
+  const [editSeverity, setEditSeverity] = useState('');
 
-  // ── UI state ────────────────────────────────────────────────────────────────
-  const [activeFilter, setActiveFilter] = useState<FilterKey>('ALL');
-  const [searchQuery,  setSearchQuery]  = useState('');
-
-  // ── Manually pinned ticket IDs (from localStorage) ─────────────────────────
-  const [pinnedIds, setPinnedIds] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem('tt_pinned_ids');
-      return stored ? JSON.parse(stored) : [];
-    } catch { return []; }
-  });
-
-  // ── Persist group config ────────────────────────────────────────────────────
+  // Persist to localStorage
   useEffect(() => {
-    if (!groupName) return;
-    const cfg: GroupConfig = { groupName, savedAt: new Date().toISOString() };
-    localStorage.setItem('tt_group_config', JSON.stringify(cfg));
-  }, [groupName]);
+    localStorage.setItem('optic-tracked-tickets', JSON.stringify(tickets));
+  }, [tickets]);
 
-  // ── Persist pinned IDs ──────────────────────────────────────────────────────
-  useEffect(() => {
-    localStorage.setItem('tt_pinned_ids', JSON.stringify(pinnedIds));
-  }, [pinnedIds]);
+  // ── Add ticket ──
+  const addTicket = () => {
+    const cleanId = inputId
+      .replace(/^https?:\/\/t\.corp\.amazon\.com\//, '')
+      .trim();
 
-  // ── Auto-fetch when group is set and bridge is ready ────────────────────────
-  useEffect(() => {
-    if (bridgeReady && groupName) {
-      loadTickets();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bridgeReady, groupName]);
+    if (!cleanId) return;
 
-  // ── Fetch tickets via bridge ────────────────────────────────────────────────
-  const loadTickets = useCallback(async () => {
-    if (!groupName) return;
-    setLoading(true);
-    setError(null);
-
-    try {
-      const raw = await fetchTickets(groupName);
-
-      // Filter to only tracked tickets and attach categories
-      const tracked = raw
-        .filter(t => isTrackedTicket(t.title))
-        .map(t => ({ ...t, categories: categorizeTicket(t.title) }));
-
-      setTickets(tracked);
-      setLastFetched(new Date().toLocaleTimeString());
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch tickets');
-    } finally {
-      setLoading(false);
-    }
-  }, [groupName, fetchTickets]);
-
-  // ── Save group ──────────────────────────────────────────────────────────────
-  const handleSaveGroup = () => {
-    const trimmed = groupInput.trim();
-    if (!trimmed) return;
-    setGroupName(trimmed);
-    setEditingGroup(false);
-  };
-
-  // ── Pin / unpin ─────────────────────────────────────────────────────────────
-  const togglePin = (id: string) => {
-    setPinnedIds(prev =>
-      prev.includes(id) ? prev.filter(p => p !== id) : [id, ...prev]
-    );
-  };
-
-  // ── Manual ticket add ───────────────────────────────────────────────────────
-  const [manualInput, setManualInput] = useState('');
-  const [manualError, setManualError] = useState<string | null>(null);
-
-  const handleManualAdd = () => {
-    const id = manualInput.trim().toUpperCase();
-    if (!id) return;
-    if (pinnedIds.includes(id)) {
-      setManualError('Already pinned.');
+    if (tickets.some((t) => t.id.toLowerCase() === cleanId.toLowerCase())) {
+      alert(`Ticket ${cleanId} is already being tracked.`);
       return;
     }
-    setPinnedIds(prev => [id, ...prev]);
-    setManualInput('');
-    setManualError(null);
+
+    const newTicket: TrackedTicket = {
+      id: cleanId,
+      title: inputTitle.trim() || cleanId,
+      status: inputStatus,
+      severity: inputSeverity,
+      url: `https://t.corp.amazon.com/${cleanId}`,
+      addedAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+    };
+
+    setTickets((prev) => [newTicket, ...prev]);
+    setInputId('');
+    setInputTitle('');
+    setInputStatus('Assigned');
+    setInputSeverity('3');
+    setShowForm(false);
   };
 
-  // ── Filtered + sorted tickets ───────────────────────────────────────────────
-  const filteredTickets = tickets
-    .filter(t => {
-      if (activeFilter === 'OPTIC')    return t.categories.includes('optic');
-      if (activeFilter === 'REQUIRED') return t.categories.includes('required');
-      if (activeFilter === 'DR4')      return t.categories.includes('dr4');
-      if (activeFilter === 'STATE')    return t.categories.includes('state');
-      if (activeFilter === 'CHANGE')   return t.categories.includes('change');
-      if (activeFilter === 'OPEN')     return t.status.toLowerCase() !== 'resolved';
-      if (activeFilter === 'RESOLVED') return t.status.toLowerCase() === 'resolved';
-      return true;
-    })
-    .filter(t => {
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toUpperCase();
-      return (
-        t.id.toUpperCase().includes(q)    ||
-        t.title.toUpperCase().includes(q) ||
-        t.assignee.toUpperCase().includes(q)
-      );
-    })
-    // Pinned tickets float to top
-    .sort((a, b) => {
-      const aPinned = pinnedIds.includes(a.id) ? 0 : 1;
-      const bPinned = pinnedIds.includes(b.id) ? 0 : 1;
-      return aPinned - bPinned;
-    });
-
-  // ── Stats ───────────────────────────────────────────────────────────────────
-  const stats = {
-    total   : tickets.length,
-    open    : tickets.filter(t => t.status.toLowerCase() !== 'resolved').length,
-    resolved: tickets.filter(t => t.status.toLowerCase() === 'resolved').length,
-    optic   : tickets.filter(t => t.categories.includes('optic')).length,
-    dr4     : tickets.filter(t => t.categories.includes('dr4')).length,
-    state   : tickets.filter(t => t.categories.includes('state')).length,
-    change  : tickets.filter(t => t.categories.includes('change')).length,
+  // ── Remove ticket ──
+  const removeTicket = (id: string) => {
+    setTickets((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // ─── Render ─────────────────────────────────────────────────────────────────
+  // ── Update ticket status/severity ──
+  const startEdit = (ticket: TrackedTicket) => {
+    setEditingId(ticket.id);
+    setEditStatus(ticket.status);
+    setEditSeverity(ticket.severity);
+  };
+
+  const saveEdit = () => {
+    if (!editingId) return;
+    setTickets((prev) =>
+      prev.map((t) =>
+        t.id === editingId
+          ? { ...t, status: editStatus, severity: editSeverity, lastUpdated: new Date().toISOString() }
+          : t
+      )
+    );
+    setEditingId(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+  };
+
+  // ════════════════════════════════════════════════════════
+  //  Render
+  // ════════════════════════════════════════════════════════
+
   return (
-    <div className="ticket-tracking">
-
-      {/* ── Header ── */}
-      <div className="tt-header">
-        <h1>
-          🎫 Ticket <span className="tt-title-accent">Tracking</span>
-        </h1>
-        <p className="tt-subtitle">Monitor optic-related SIM tickets for your group</p>
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+      {/* Header — stacked layout so button doesn't block title */}
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '22px' }}>🎫 Ticket Tracker</h2>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          style={{
+            padding: '8px 16px',
+            background: showForm ? 'rgba(244, 67, 54, 0.2)' : 'rgba(255, 153, 0, 0.2)',
+            border: `1px solid ${showForm ? '#f44336' : '#ff9900'}`,
+            borderRadius: '6px',
+            color: showForm ? '#f44336' : '#ff9900',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            fontSize: '13px',
+          }}
+        >
+          {showForm ? '✕ Cancel' : '+ Add Ticket'}
+        </button>
       </div>
 
-      {/* ── Bridge Warning ── */}
-      {!bridgeReady && (
-        <div className="tt-bridge-warning">
-          ⚠️ Tampermonkey bridge not detected. Ensure the optic-amazon Bridge script
-          is running and refresh.
-        </div>
-      )}
-
-      {/* ── Group Config ── */}
-      <div className="tt-group-section">
-        {editingGroup ? (
-          <div className="tt-group-editor">
-            <div className="tt-group-editor-label">
-              👥 Your SIM Assigned Group
-            </div>
-            <div className="tt-group-editor-row">
+      {/* Add Ticket Form */}
+      {showForm && (
+        <div style={{
+          background: 'linear-gradient(135deg, #1a2332, #2a3a4a)',
+          border: '1px solid #ff9900',
+          borderRadius: '8px',
+          padding: '16px',
+          marginBottom: '20px',
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Ticket ID */}
+            <div>
+              <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>
+                Ticket ID or URL *
+              </label>
               <input
-                className="tt-group-input"
                 type="text"
-                placeholder="e.g. IAD ID South Cabling"
-                value={groupInput}
-                onChange={e => setGroupInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSaveGroup()}
-                spellCheck={false}
+                placeholder="V1234567890 or https://t.corp.amazon.com/V1234567890"
+                value={inputId}
+                onChange={(e) => setInputId(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  background: '#0d1520',
+                  border: '1px solid #333',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  boxSizing: 'border-box',
+                }}
               />
-              <button
-                className="tt-group-save-btn"
-                onClick={handleSaveGroup}
-                disabled={!groupInput.trim()}
-              >
-                ✓ Save
-              </button>
-              {groupName && (
-                <button
-                  className="tt-group-cancel-btn"
-                  onClick={() => { setGroupInput(groupName); setEditingGroup(false); }}
+            </div>
+
+            {/* Title */}
+            <div>
+              <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>
+                Title (optional — defaults to ticket ID)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. DR4 - IAD55 OPTICS REQUIRED"
+                value={inputTitle}
+                onChange={(e) => setInputTitle(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  background: '#0d1520',
+                  border: '1px solid #333',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            {/* Status & Severity row */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>
+                  Status
+                </label>
+                <select
+                  value={inputStatus}
+                  onChange={(e) => setInputStatus(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    background: '#0d1520',
+                    border: '1px solid #333',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    fontSize: '14px',
+                  }}
                 >
-                  Cancel
-                </button>
-              )}
-            </div>
-            <span className="tt-group-hint">
-              Enter the exact group name as it appears in SIM Ticketing
-            </span>
-          </div>
-        ) : (
-          <div className="tt-group-display">
-            <div className="tt-group-display-inner">
-              <span className="tt-group-label">👥 Group</span>
-              <span className="tt-group-name">{groupName}</span>
-            </div>
-            <div className="tt-group-actions">
-              <button
-                className="tt-group-edit-btn"
-                onClick={() => { setGroupInput(groupName); setEditingGroup(true); }}
-              >
-                ✏️ Change
-              </button>
-              <button
-                className="tt-refresh-btn"
-                onClick={loadTickets}
-                disabled={loading || !bridgeReady}
-                title="Refresh tickets"
-              >
-                {loading ? '⏳' : '🔄'} Refresh
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
 
-      {/* ── Error ── */}
-      {error && <div className="tt-error">⚠ {error}</div>}
+              <div style={{ flex: 1 }}>
+                <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>
+                  Severity
+                </label>
+                <select
+                  value={inputSeverity}
+                  onChange={(e) => setInputSeverity(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    background: '#0d1520',
+                    border: '1px solid #333',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    fontSize: '14px',
+                  }}
+                >
+                  {SEVERITY_OPTIONS.map((s) => (
+                    <option key={s} value={s}>SEV {s}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-      {/* ── Stats Bar ── */}
+            {/* Submit */}
+            <button
+              onClick={addTicket}
+              disabled={!inputId.trim()}
+              style={{
+                padding: '10px 20px',
+                background: '#ff9900',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#000',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontSize: '14px',
+                opacity: inputId.trim() ? 1 : 0.5,
+              }}
+            >
+              Add Ticket
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Stats */}
       {tickets.length > 0 && (
-        <div className="tt-stats-bar">
-          <div className="tt-stat">
-            <span className="tt-stat-number">{stats.total}</span>
-            <span className="tt-stat-label">Total</span>
-          </div>
-          <div className="tt-stat-divider" />
-          <div className="tt-stat">
-            <span className="tt-stat-number tt-stat-open">{stats.open}</span>
-            <span className="tt-stat-label">Open</span>
-          </div>
-          <div className="tt-stat-divider" />
-          <div className="tt-stat">
-            <span className="tt-stat-number tt-stat-resolved">{stats.resolved}</span>
-            <span className="tt-stat-label">Resolved</span>
-          </div>
-          <div className="tt-stat-divider" />
-          <div className="tt-stat">
-            <span className="tt-stat-number tt-stat-optic">{stats.optic}</span>
-            <span className="tt-stat-label">Optic</span>
-          </div>
-          <div className="tt-stat-divider" />
-          <div className="tt-stat">
-            <span className="tt-stat-number tt-stat-dr4">{stats.dr4}</span>
-            <span className="tt-stat-label">DR4</span>
-          </div>
-          <div className="tt-stat-divider" />
-          <div className="tt-stat">
-            <span className="tt-stat-number tt-stat-state">{stats.state}</span>
-            <span className="tt-stat-label">State</span>
-          </div>
-          <div className="tt-stat-divider" />
-          <div className="tt-stat">
-            <span className="tt-stat-number tt-stat-change">{stats.change}</span>
-            <span className="tt-stat-label">Change</span>
-          </div>
-          {lastFetched && (
-            <>
-              <div className="tt-stat-divider" />
-              <div className="tt-stat">
-                <span className="tt-stat-label tt-last-fetched">
-                  Updated {lastFetched}
-                </span>
-              </div>
-            </>
-          )}
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', fontSize: '13px', color: '#aaa' }}>
+          <span>Tracking: <strong style={{ color: '#fff' }}>{tickets.length}</strong></span>
+          <span>Open: <strong style={{ color: '#2196f3' }}>{tickets.filter((t) => t.status !== 'Resolved').length}</strong></span>
+          <span>Resolved: <strong style={{ color: '#4caf50' }}>{tickets.filter((t) => t.status === 'Resolved').length}</strong></span>
         </div>
       )}
 
-      {/* ── Filter + Search Row ── */}
-      {(tickets.length > 0 || searchQuery) && (
-        <div className="tt-controls-row">
-          <div className="tt-filter-tabs">
-            {FILTERS.map(f => (
-              <button
-                key={f.key}
-                className={`tt-filter-tab ${activeFilter === f.key ? 'active' : ''}`}
-                onClick={() => setActiveFilter(f.key)}
-              >
-                {f.label}
-                {f.key !== 'ALL' && (
-                  <span className="tt-filter-count">
-                    {f.key === 'OPTIC'    && stats.optic}
-                    {f.key === 'REQUIRED' && tickets.filter(t => t.categories.includes('required')).length}
-                    {f.key === 'DR4'      && stats.dr4}
-                    {f.key === 'STATE'    && stats.state}
-                    {f.key === 'CHANGE'   && stats.change}
-                    {f.key === 'OPEN'     && stats.open}
-                    {f.key === 'RESOLVED' && stats.resolved}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-          <input
-            className="tt-search-input"
-            type="text"
-            placeholder="Search by ID, title, or assignee…"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            spellCheck={false}
-          />
+      {/* Ticket Cards */}
+      {tickets.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+          <p>No tickets being tracked yet.</p>
+          <p style={{ fontSize: '13px' }}>Click "+ Add Ticket" to start tracking.</p>
         </div>
-      )}
-
-      {/* ── Ticket List ── */}
-      <div className="tt-content">
-        {loading && (
-          <div className="tt-loading">
-            <div className="tt-spinner" />
-            <span>Fetching tickets from SIM…</span>
-          </div>
-        )}
-
-        {!loading && !error && groupName && tickets.length === 0 && (
-          <div className="tt-empty">
-            <div className="tt-empty-icon">🎫</div>
-            <div className="tt-empty-title">No tracked tickets found</div>
-            <div className="tt-empty-sub">
-              No tickets in <strong>{groupName}</strong> matched keywords:{' '}
-              {TRACK_KEYWORDS.join(', ')}
-            </div>
-          </div>
-        )}
-
-        {!loading && filteredTickets.length > 0 && (
-          <div className="tt-ticket-list">
-            {filteredTickets.map(ticket => (
-              <div key={ticket.id} className="tt-ticket-row">
-                {/* Pin button */}
-                <button
-                  className={`tt-pin-btn ${pinnedIds.includes(ticket.id) ? 'pinned' : ''}`}
-                  onClick={() => togglePin(ticket.id)}
-                  title={pinnedIds.includes(ticket.id) ? 'Unpin' : 'Pin to top'}
-                >
-                  📌
-                </button>
-                <TicketCard ticket={ticket} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {!loading && filteredTickets.length === 0 && tickets.length > 0 && (
-          <div className="tt-empty">
-            <div className="tt-empty-icon">🔍</div>
-            <div className="tt-empty-title">No tickets match your filter</div>
-            <div className="tt-empty-sub">Try a different filter or clear your search.</div>
-          </div>
-        )}
-      </div>
-
-      {/* ── Manual Pin Section ── */}
-      <div className="tt-manual-section">
-        <div className="tt-manual-header">
-          <span>📌 Manually Pin a Ticket</span>
-          <span className="tt-manual-hint">
-            Pin any ticket ID to always keep it visible
-          </span>
-        </div>
-        <div className="tt-manual-row">
-          <input
-            className="tt-manual-input"
-            type="text"
-            placeholder="Ticket ID — e.g. V2218590720"
-            value={manualInput}
-            onChange={e => setManualInput(e.target.value.toUpperCase())}
-            onKeyDown={e => e.key === 'Enter' && handleManualAdd()}
-            spellCheck={false}
-          />
-          <button
-            className="tt-manual-add-btn"
-            onClick={handleManualAdd}
-            disabled={!manualInput.trim()}
+      ) : (
+        tickets.map((ticket) => (
+          <div
+            key={ticket.id}
+            style={{
+              background: 'linear-gradient(135deg, #1a2332, #2a3a4a)',
+              border: '1px solid #333',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '12px',
+            }}
           >
-            ➕ Pin
-          </button>
-        </div>
-        {manualError && <div className="tt-manual-error">{manualError}</div>}
-
-        {/* Pinned IDs that aren't in the fetched list */}
-        {pinnedIds.filter(id => !tickets.find(t => t.id === id)).length > 0 && (
-          <div className="tt-pinned-list">
-            {pinnedIds
-              .filter(id => !tickets.find(t => t.id === id))
-              .map(id => (
-                <div key={id} className="tt-pinned-item">
+            {editingId === ticket.id ? (
+              /* ── Edit Mode ── */
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <a
-                    href={getSimTicketUrl(id)}
+                    href={ticket.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="tt-pinned-link"
+                    style={{ color: '#ff9900', fontWeight: 'bold', textDecoration: 'none', fontSize: '15px' }}
                   >
-                    🔗 {id}
+                    {ticket.id}
                   </a>
-                  <button
-                    className="tt-pinned-remove"
-                    onClick={() => togglePin(id)}
-                    title="Remove pin"
+                  <span style={{ color: '#aaa', fontSize: '12px' }}>Editing...</span>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      background: '#0d1520',
+                      border: '1px solid #ff9900',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      fontSize: '13px',
+                    }}
                   >
-                    ✕
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={editSeverity}
+                    onChange={(e) => setEditSeverity(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      background: '#0d1520',
+                      border: '1px solid #ff9900',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      fontSize: '13px',
+                    }}
+                  >
+                    {SEVERITY_OPTIONS.map((s) => (
+                      <option key={s} value={s}>SEV {s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={saveEdit}
+                    style={{
+                      padding: '6px 14px',
+                      background: '#4caf50',
+                      border: 'none',
+                      borderRadius: '4px',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={cancelEdit}
+                    style={{
+                      padding: '6px 14px',
+                      background: 'transparent',
+                      border: '1px solid #666',
+                      borderRadius: '4px',
+                      color: '#aaa',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                    }}
+                  >
+                    Cancel
                   </button>
                 </div>
-              ))}
-          </div>
-        )}
-      </div>
+              </div>
+            ) : (
+              /* ── Display Mode ── */
+              <>
+                {/* Card header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <a
+                    href={ticket.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#ff9900', fontWeight: 'bold', textDecoration: 'none', fontSize: '15px' }}
+                  >
+                    {ticket.id}
+                  </a>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => startEdit(ticket)}
+                      title="Edit status/severity"
+                      style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '14px' }}
+                    >
+                      ✎
+                    </button>
+                    <button
+                      onClick={() => removeTicket(ticket.id)}
+                      title="Remove"
+                      style={{ background: 'none', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: '14px' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
 
+                {/* Title */}
+                <div style={{ color: '#ddd', fontSize: '14px', marginBottom: '10px' }}>
+                  {ticket.title}
+                </div>
+
+                {/* Status & Severity badges */}
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+                  <span style={{
+                    padding: '3px 10px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    background: `${getStatusColor(ticket.status)}33`,
+                    border: `1px solid ${getStatusColor(ticket.status)}`,
+                    color: getStatusColor(ticket.status),
+                  }}>
+                    {ticket.status}
+                  </span>
+                  <span style={{
+                    padding: '3px 10px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    background: `${getSeverityColor(ticket.severity)}33`,
+                    border: `1px solid ${getSeverityColor(ticket.severity)}`,
+                    color: getSeverityColor(ticket.severity),
+                  }}>
+                    SEV {ticket.severity}
+                  </span>
+                </div>
+
+                {/* Meta */}
+                <div style={{ fontSize: '12px', color: '#666' }}>
+                  Last updated: {formatDate(ticket.lastUpdated)}
+                </div>
+              </>
+            )}
+          </div>
+        ))
+      )}
     </div>
   );
-};
-
-export default TicketTracking;
+}
